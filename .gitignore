@@ -42,6 +42,9 @@ yarn-error.log*
 *.swo
 .claude/
 
+# Scratch test images
+Example labels/
+
 # Playwright
 playwright-report/
 test-results/
