@@ -1,6 +1,6 @@
 """Pydantic v2 schemas for the ALRT API contract."""
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -30,24 +30,24 @@ class BoundingBox(BaseModel):
 class WarningExtraction(BaseModel):
     """Government Warning fields extracted by the vision model."""
 
-    verbatim_text: Optional[str]
-    is_all_caps: Optional[bool]
-    is_bold: Optional[bool]
-    is_continuous_paragraph: Optional[bool]
-    bbox: Optional[BoundingBox]
+    verbatim_text: str | None
+    is_all_caps: bool | None
+    is_bold: bool | None
+    is_continuous_paragraph: bool | None
+    bbox: BoundingBox | None
 
 
 class ExtractedLabel(BaseModel):
     """Stage 1 output. Returned by the vision model after Blind Extraction."""
 
-    brand_name: Optional[str]
-    class_or_type: Optional[str]
-    alcohol_content: Optional[str]
-    net_contents: Optional[str]
-    bottler_name_and_address: Optional[str]
-    country_of_origin: Optional[str]
+    brand_name: str | None
+    class_or_type: str | None
+    alcohol_content: str | None
+    net_contents: str | None
+    bottler_name_and_address: str | None
+    country_of_origin: str | None
     government_warning: WarningExtraction
-    bboxes: dict[str, Optional[BoundingBox]]
+    bboxes: dict[str, BoundingBox | None]
 
 
 class VerifyRequest(BaseModel):
@@ -64,22 +64,22 @@ class FieldResult(BaseModel):
     """Per-field comparison outcome surfaced to the agent."""
 
     status: FieldStatus
-    extracted_value: Optional[str]
+    extracted_value: str | None
     application_value: str
-    region_crop: Optional[str]
-    note: Optional[str] = None
+    region_crop: str | None
+    note: str | None = None
 
 
 class WarningResult(BaseModel):
     """Government Warning comparison outcome."""
 
     status: FieldStatus
-    extracted_text: Optional[str]
+    extracted_text: str | None
     canonical_text: str
-    is_all_caps: Optional[bool]
-    is_bold: Optional[bool]
-    is_continuous_paragraph: Optional[bool]
-    region_crop: Optional[str]
+    is_all_caps: bool | None
+    is_bold: bool | None
+    is_continuous_paragraph: bool | None
+    region_crop: str | None
 
 
 class VerificationSummary(BaseModel):
@@ -99,4 +99,4 @@ class VerificationResult(BaseModel):
     government_warning: WarningResult
     summary: VerificationSummary
     manual_review_required: bool = False
-    error_reason: Optional[str] = None
+    error_reason: str | None = None
