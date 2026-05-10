@@ -14,7 +14,11 @@ class Settings(BaseSettings):
     )
 
     anthropic_api_key: str = ""
-    anthropic_model: str = "claude-sonnet-4-5"
+    # Default to Sonnet 4.6 — the current latest in the Claude 4.x vision
+    # family. The PRD originally pinned 4.5 (drafted before 4.6 shipped); the
+    # Phase 1.5 hardening pass updated the default. Override via env var if
+    # accuracy or cost benchmarking favors a different model.
+    anthropic_model: str = "claude-sonnet-4-6"
     max_batch_size: int = 300
     max_concurrent_requests: int = 10
 

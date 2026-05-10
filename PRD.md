@@ -140,7 +140,7 @@ Build in this order. Each phase ends with a verification step you must run befor
 **Goal:** A runnable FastAPI app that returns hardcoded mock data, so the contract is locked before adding the model call.
 
 **Files to create:**
-- `backend/app/config.py` — Pydantic Settings class loading `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-4-5`), `MAX_BATCH_SIZE` (default `300`), `MAX_CONCURRENT_REQUESTS` (default `10`).
+- `backend/app/config.py` — Pydantic Settings class loading `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-4-6`), `MAX_BATCH_SIZE` (default `300`), `MAX_CONCURRENT_REQUESTS` (default `10`).
 - `backend/app/schemas.py` — see Section 4 below for exact schemas. All schemas in this one file.
 - `backend/app/main.py` — FastAPI app, CORS allowing `http://localhost:5173`, mount routes from `routes/`.
 - `backend/app/routes/verify.py` — `POST /api/verify` accepting the request schema, returning a hardcoded `VerificationResult` for now.

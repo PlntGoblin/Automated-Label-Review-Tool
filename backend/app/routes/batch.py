@@ -21,7 +21,7 @@ async def verify_batch(requests: list[VerifyRequest]) -> list[VerificationResult
     """Verify a batch of labels. Returns one result per input, in order."""
     if len(requests) > settings.max_batch_size:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=(
                 f"Batch size {len(requests)} exceeds maximum of {settings.max_batch_size}."
             ),

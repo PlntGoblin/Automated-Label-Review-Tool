@@ -2,7 +2,10 @@
 
 A prototype web application for the U.S. Department of the Treasury's Alcohol and Tobacco Tax and Trade Bureau (TTB) that uses AI vision models to support the verification of alcohol beverage labels against their corresponding Certificate of Label Approval (COLA) application data.
 
-> **Status:** Take-home prototype. Not affiliated with TTB or Treasury. Not for production use.
+> **Status:** Take-home prototype, in active development. Phase 1 of 10 complete (FastAPI backend skeleton with mocked endpoints and contract tests). Not affiliated with TTB or Treasury. Not for production use.
+>
+> **Source:** <https://github.com/PlntGoblin/Automated-Label-Review-Tool>
+> **Live demo:** pending Phase 10 deployment.
 
 ---
 
@@ -68,7 +71,7 @@ The agent never sees a binary "FAIL." Each flagged field is shown alongside the 
 |---|---|
 | Backend | Python 3.12 + FastAPI |
 | Frontend | React 18 + Vite + TypeScript, USWDS components |
-| AI/Vision | Claude Sonnet 4.5 (Anthropic API) for the prototype; FedRAMP-High options documented under production migration below |
+| AI/Vision | Claude Sonnet 4.6 (Anthropic API) for the prototype; FedRAMP-High options documented under production migration below |
 | Validation | Pydantic v2 |
 | Deployment | Render (prototype only) |
 
@@ -153,7 +156,7 @@ UI at `http://localhost:5173`.
 
 ## Using the deployed app
 
-**Live demo:** [URL goes here once deployed]
+**Live demo:** Pending Phase 10 deployment. In the meantime, follow the **Running locally** section above.
 
 1. Click **Upload Label** and select a label image (JPG, PNG, or PDF).
 2. Fill in the application data fields (brand name, class/type, ABV, net contents, etc.).
