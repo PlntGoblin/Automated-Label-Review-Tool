@@ -1,17 +1,22 @@
-"""Contract tests for the Phase 1 mock endpoints.
+"""Contract tests for the API surface and the Stage 1 prompt.
 
-These tests pin the API surface — request shapes, response shapes, and
-boundary conditions. They survive the Phase 2/3/5 refactors that swap
-the mock implementation for real model calls and deterministic compare,
-because the contract is invariant.
+Phase 2 wires real vision extraction in. The vision module is mocked in
+tests — per PRD §8, tests must not hit the live Anthropic API. Each test
+that exercises the verify pipeline applies its own monkeypatch on
+`app.vision.extract`.
 """
 
+import re
+from pathlib import Path
 from typing import get_args
 
+import pytest
 from fastapi.testclient import TestClient
 
+from app import vision as vision_module
 from app.main import app
-from app.schemas import FieldStatus
+from app.schemas import ExtractedLabel, FieldStatus, WarningExtraction
+from app.vision import MalformedExtractionError, VisionAPIError
 
 client = TestClient(app)
 
@@ -29,6 +34,35 @@ VALID_REQUEST = {
     "application": VALID_APPLICATION,
 }
 
+_CANONICAL_WARNING_FOR_TESTS = (
+    "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not "
+    "drink alcoholic beverages during pregnancy because of the risk of birth "
+    "defects. (2) Consumption of alcoholic beverages impairs your ability to "
+    "drive a car or operate machinery, and may cause health problems."
+)
+
+FAKE_EXTRACTION = ExtractedLabel(
+    brand_name="Old Tom Distillery",
+    class_or_type="Kentucky Straight Bourbon Whiskey",
+    alcohol_content="45% Alc./Vol.",
+    net_contents="750 mL",
+    bottler_name_and_address="Old Tom Distillery, Louisville KY",
+    country_of_origin="USA",
+    government_warning=WarningExtraction(
+        verbatim_text=_CANONICAL_WARNING_FOR_TESTS,
+        is_all_caps=True,
+        is_bold=True,
+        is_continuous_paragraph=True,
+        bbox=None,
+    ),
+    bboxes={},
+)
+
+
+def _patch_extract(monkeypatch: pytest.MonkeyPatch, fake) -> None:
+    """Replace app.vision.extract with the given async coroutine for one test."""
+    monkeypatch.setattr(vision_module, "extract", fake)
+
 
 def test_health_returns_ok() -> None:
     """The /health endpoint reports liveness."""
@@ -37,8 +71,14 @@ def test_health_returns_ok() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_verify_returns_well_formed_result() -> None:
-    """A valid request returns 200 with a complete VerificationResult."""
+def test_verify_returns_well_formed_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A valid request with a successful extraction returns 200 with a complete VerificationResult."""
+
+    async def fake_extract(image_bytes: bytes) -> ExtractedLabel:
+        return FAKE_EXTRACTION
+
+    _patch_extract(monkeypatch, fake_extract)
+
     response = client.post("/api/verify", json=VALID_REQUEST)
     assert response.status_code == 200
     body = response.json()
@@ -65,6 +105,54 @@ def test_verify_returns_well_formed_result() -> None:
     assert isinstance(summary["requires_full_manual_review"], bool)
 
 
+def test_verify_returns_manual_review_on_malformed_extraction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A MalformedExtractionError surfaces as 200 + manual_review_required: true."""
+
+    async def fake_extract(image_bytes: bytes) -> ExtractedLabel:
+        raise MalformedExtractionError("simulated parse failure")
+
+    _patch_extract(monkeypatch, fake_extract)
+
+    response = client.post("/api/verify", json=VALID_REQUEST)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["manual_review_required"] is True
+    assert body["error_reason"] is not None
+    assert "malformed" in body["error_reason"].lower()
+
+
+def test_verify_returns_manual_review_on_vision_api_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A persistent VisionAPIError surfaces as 200 + manual_review_required: true."""
+
+    async def fake_extract(image_bytes: bytes) -> ExtractedLabel:
+        raise VisionAPIError("simulated API failure after retry")
+
+    _patch_extract(monkeypatch, fake_extract)
+
+    response = client.post("/api/verify", json=VALID_REQUEST)
+    assert response.status_code == 200
+    body = response.json()
+    assert body["manual_review_required"] is True
+    assert body["error_reason"] is not None
+    assert "api" in body["error_reason"].lower()
+
+
+def test_verify_returns_manual_review_on_invalid_base64() -> None:
+    """An undecodable label_image returns 200 + manual_review_required: true (not a 500)."""
+    response = client.post(
+        "/api/verify",
+        json={"label_image": "!@#$%", "application": VALID_APPLICATION},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["manual_review_required"] is True
+    assert "base64" in body["error_reason"].lower()
+
+
 def test_verify_rejects_missing_application_field() -> None:
     """Pydantic rejects a request missing a required application field."""
     bad_application = {k: v for k, v in VALID_APPLICATION.items() if k != "brand_name"}
@@ -88,3 +176,25 @@ def test_batch_empty_list_returns_empty_list() -> None:
     response = client.post("/api/verify/batch", json=[])
     assert response.status_code == 200
     assert response.json() == []
+
+
+def test_stage1_prompt_does_not_leak_expected_values() -> None:
+    """The Blind Extraction prompt must not tell the model what the right answer looks like.
+
+    Per PRD §5: the prompt is forbidden from containing language that leaks
+    expected values or success criteria to the model. The grep regex below
+    is the literal acceptance criterion from PRD §2 Phase 2.
+    """
+    prompt_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / "docs"
+        / "prompts"
+        / "stage1_blind_extraction.txt"
+    )
+    text = prompt_path.read_text(encoding="utf-8")
+    forbidden = re.compile(
+        r"application data|expected value|correct (label|value)|should (be|match)|expected to",
+        re.IGNORECASE,
+    )
+    matches = forbidden.findall(text)
+    assert not matches, f"Prompt leaks expected values or success criteria: {matches}"
