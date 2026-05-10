@@ -1,0 +1,15 @@
+[project]
+name = "alrt-backend"
+version = "0.1.0"
+description = "Automated Label Review Tool — TTB label verification prototype backend."
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501"]
