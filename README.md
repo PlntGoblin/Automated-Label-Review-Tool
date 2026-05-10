@@ -2,7 +2,7 @@
 
 A prototype web application for the U.S. Department of the Treasury's Alcohol and Tobacco Tax and Trade Bureau (TTB) that uses AI vision models to support the verification of alcohol beverage labels against their corresponding Certificate of Label Approval (COLA) application data.
 
-> **Status:** Take-home prototype, in active development. Phase 1 of 10 complete (FastAPI backend skeleton with mocked endpoints and contract tests). Not affiliated with TTB or Treasury. Not for production use.
+> **Status:** Take-home prototype, in active development. Phase 3 of 10 complete (backend with real vision extraction and deterministic field comparison). Not affiliated with TTB or Treasury. Not for production use.
 >
 > **Source:** <https://github.com/PlntGoblin/Automated-Label-Review-Tool>
 > **Live demo:** pending Phase 10 deployment.
@@ -37,7 +37,7 @@ ALRT uses a two-stage **Blind Extraction** architecture: the vision model extrac
 
 ```
 ┌──────────────────┐      ┌──────────────────────────────────────┐      ┌────────────────────┐
-│  React Frontend  │ ───▶ │  FastAPI Backend                     │      │  Claude Sonnet 4.5 │
+│  React Frontend  │ ───▶ │  FastAPI Backend                     │      │  Claude Sonnet 4.6 │
 │  (USWDS + a11y)  │      │                                      │      │  (vision, blind)   │
 └──────────────────┘      │  Stage 1: Blind Extraction           │ ───▶ │                    │
         ▲                 │   • Image only — no application data │      └────────────────────┘
@@ -176,10 +176,10 @@ For batch processing, use **Batch Upload** to submit multiple label images and a
   "label_image": "<base64-encoded image>",
   "application": {
     "brand_name": "OLD TOM DISTILLERY",
-    "class_type": "Kentucky Straight Bourbon Whiskey",
+    "class_or_type": "Kentucky Straight Bourbon Whiskey",
     "alcohol_content": "45% Alc./Vol.",
     "net_contents": "750 mL",
-    "bottler_name": "...",
+    "bottler_name_and_address": "Old Tom Distillery, Louisville KY",
     "country_of_origin": "USA"
   }
 }
@@ -212,7 +212,7 @@ This is a take-home prototype, so several decisions were made in the absence of 
 
 **Trade-offs and known limitations:**
 
-- The 5-second target depends on the model provider's response time. Measured p50 for Claude Sonnet 4.5 on a single label is ~2.5–3.5s; p95 is ~5s.
+- The 5-second target depends on the model provider's response time. Measured p50 for Claude Sonnet 4.6 on a single label is ~2.5–3.5s; p95 is ~5s.
 - Tolerant matching is heuristic and will not catch every edge case. The cropped-region UI is the safety net.
 - The vision model returns `LOW_CONFIDENCE` rather than guessing on degraded images; the UI surfaces a "re-photograph recommended" status.
 - Benchmark performance does not translate directly to performance on actual TTB imagery. Production rollout requires a labeled validation set (see below).
