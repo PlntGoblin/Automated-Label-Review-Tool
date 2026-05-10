@@ -160,6 +160,12 @@ def test_infer_distilled_spirits_vodka() -> None:
     assert _infer_beverage_class("Vodka") == "distilled_spirits"
 
 
+def test_infer_malt_whiskey_is_distilled_spirits() -> None:
+    """'Malt' in 'Single Malt Scotch Whisky' must not misclassify as malt beverage."""
+    assert _infer_beverage_class("Single Malt Scotch Whisky") == "distilled_spirits"
+    assert _infer_beverage_class("American Malt Whiskey") == "distilled_spirits"
+
+
 # ---------------------------------------------------------------------------
 # compare_brand_name
 # ---------------------------------------------------------------------------

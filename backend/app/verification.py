@@ -42,9 +42,10 @@ _COUNTRY_ALIASES: dict[str, str] = {
 }
 
 # Keywords used to classify a beverage type from the class/type designation.
-_MALT_TERMS = frozenset(
-    ("beer", "ale", "lager", "stout", "porter", "malt", "pilsner", "ipa", "wheat", "bock", "saison")
-)
+_MALT_TERMS = frozenset((
+    "beer", "ale", "lager", "stout", "porter", "malt beverage",
+    "pilsner", "ipa", "wheat", "bock", "saison",
+))
 _WINE_TERMS = frozenset(
     ("wine", "champagne", "sparkling", "vermouth", "port", "sherry", "mead", "sake", "cider")
 )
@@ -59,12 +60,6 @@ def normalize_for_brand(s: str) -> str:
     """Lowercase, strip punctuation, collapse whitespace."""
     s = unicodedata.normalize("NFC", s).lower()
     s = re.sub(r"[^\w\s]", "", s)
-    return re.sub(r"\s+", " ", s).strip()
-
-
-def normalize_for_warning(s: str) -> str:
-    """Unicode NFC, collapse internal whitespace, strip leading/trailing whitespace."""
-    s = unicodedata.normalize("NFC", s)
     return re.sub(r"\s+", " ", s).strip()
 
 
@@ -167,7 +162,7 @@ def compare_class_or_type(extracted: str | None, application: str) -> FieldResul
         return _make_field_result("LOW_CONFIDENCE", extracted, application, _LOW_CONF_NOTE)
     ext_lower = extracted.lower()
     app_lower = application.lower()
-    if app_lower in ext_lower or ext_lower == app_lower:
+    if app_lower in ext_lower:
         return _make_field_result("PASS", extracted, application)
     return _make_field_result(
         "FLAG", extracted, application, "Class/type does not match application."
