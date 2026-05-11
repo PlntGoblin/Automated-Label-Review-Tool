@@ -103,7 +103,14 @@ export default function App() {
       <header className="bg-primary border-b border-outline-variant sticky top-0 z-50">
         <div className="flex justify-between items-center px-margin-lg w-full max-w-max-width mx-auto h-16">
           <div className="flex items-center gap-margin-md">
-            <span className="text-headline-md font-black text-on-primary">ALRT</span>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="text-headline-md font-black text-on-primary hover:text-on-primary/80 transition-colors"
+              aria-label="Go to home page"
+            >
+              ALRT
+            </button>
             <div className="hidden lg:block h-6 w-px bg-white/30 mx-2" />
             <span className="hidden lg:block text-label-bold text-on-primary/80">
               Automated Label Review Tool — TTB COLA Verification
