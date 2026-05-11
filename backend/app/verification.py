@@ -1,9 +1,13 @@
 """Stage 2: Deterministic field comparison between ExtractedLabel and ApplicationData."""
 
+import io
 import logging
 import re
 import unicodedata
 
+from PIL import Image
+
+from app.cropping import crop_region
 from app.schemas import (
     ApplicationData,
     ExtractedLabel,
@@ -287,17 +291,36 @@ def compare_country_of_origin(extracted: str | None, application: str) -> FieldR
 # ---------------------------------------------------------------------------
 
 
-def verify_label(extracted: ExtractedLabel, application: ApplicationData) -> VerificationResult:
+def _get_image_size(image_bytes: bytes) -> tuple[int, int]:
+    """Return (width, height) from image bytes. Returns (0, 0) on failure."""
+    try:
+        img = Image.open(io.BytesIO(image_bytes))
+        return img.size
+    except Exception:
+        return (0, 0)
+
+
+def verify_label(
+    extracted: ExtractedLabel,
+    application: ApplicationData,
+    image_bytes: bytes,
+) -> VerificationResult:
     """Run Stage 2 deterministic comparison and return the full VerificationResult."""
+    image_size = _get_image_size(image_bytes)
+
     fields: dict[str, FieldResult] = {
         "brand_name": compare_brand_name(extracted.brand_name, application.brand_name),
-        "class_or_type": compare_class_or_type(extracted.class_or_type, application.class_or_type),
+        "class_or_type": compare_class_or_type(
+            extracted.class_or_type, application.class_or_type
+        ),
         "alcohol_content": compare_alcohol_content(
             extracted.alcohol_content,
             application.alcohol_content,
             application.class_or_type,
         ),
-        "net_contents": compare_net_contents(extracted.net_contents, application.net_contents),
+        "net_contents": compare_net_contents(
+            extracted.net_contents, application.net_contents
+        ),
         "bottler_name_and_address": compare_bottler_name_and_address(
             extracted.bottler_name_and_address, application.bottler_name_and_address
         ),
@@ -306,7 +329,16 @@ def verify_label(extracted: ExtractedLabel, application: ApplicationData) -> Ver
         ),
     }
 
+    # Attach region crops from the vision model's bounding boxes.
+    for field_name, field_result in fields.items():
+        bbox = extracted.bboxes.get(field_name)
+        field_result.region_crop = crop_region(image_bytes, bbox, image_size)
+
     government_warning = check_government_warning(extracted.government_warning)
+    # Attach the government warning crop from its dedicated bbox.
+    government_warning.region_crop = crop_region(
+        image_bytes, extracted.government_warning.bbox, image_size
+    )
 
     pass_count = sum(1 for f in fields.values() if f.status == "PASS")
     flag_count = sum(1 for f in fields.values() if f.status == "FLAG")
@@ -320,7 +352,7 @@ def verify_label(extracted: ExtractedLabel, application: ApplicationData) -> Ver
             pass_count=pass_count,
             flag_count=flag_count,
             low_confidence_count=low_count,
-            # Two or more LOW_CONFIDENCE fields → full manual review (Phase 5 also enforces this).
+            # Two or more LOW_CONFIDENCE fields → full manual review.
             requires_full_manual_review=low_count >= 2,
         ),
     )

@@ -1,6 +1,9 @@
 """Unit tests for verification.py — per-field comparison rules and orchestrator."""
 
+import io
+
 import pytest
+from PIL import Image
 
 from app.canonical import CANONICAL_WARNING_TEXT
 from app.schemas import ApplicationData, ExtractedLabel, WarningExtraction
@@ -455,6 +458,17 @@ def _make_perfect_extraction() -> ExtractedLabel:
     )
 
 
+def _dummy_image_bytes() -> bytes:
+    """A small test PNG for verify_label (no real bboxes, so crops will be None)."""
+    img = Image.new("RGB", (500, 500), color=(200, 100, 50))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+_DUMMY_IMG = _dummy_image_bytes()
+
+
 def _make_application() -> ApplicationData:
     return ApplicationData(
         brand_name="OLD TOM DISTILLERY",
@@ -467,7 +481,7 @@ def _make_application() -> ApplicationData:
 
 
 def test_verify_label_all_pass() -> None:
-    result = verify_label(_make_perfect_extraction(), _make_application())
+    result = verify_label(_make_perfect_extraction(), _make_application(), _DUMMY_IMG)
     assert result.manual_review_required is False
     assert result.error_reason is None
     for name, field in result.fields.items():
@@ -482,7 +496,7 @@ def test_verify_label_all_pass() -> None:
 def test_verify_label_abv_mismatch_flags() -> None:
     extraction = _make_perfect_extraction()
     extraction = extraction.model_copy(update={"alcohol_content": "40% Alc./Vol."})
-    result = verify_label(extraction, _make_application())
+    result = verify_label(extraction, _make_application(), _DUMMY_IMG)
     assert result.fields["alcohol_content"].status == "FLAG"
     assert result.summary.flag_count >= 1
 
@@ -500,7 +514,7 @@ def test_verify_label_missing_warning_flags() -> None:
             )
         }
     )
-    result = verify_label(extraction, _make_application())
+    result = verify_label(extraction, _make_application(), _DUMMY_IMG)
     assert result.government_warning.status == "FLAG"
 
 
@@ -512,7 +526,7 @@ def test_verify_label_two_low_confidence_triggers_full_review() -> None:
             "alcohol_content": "LOW_CONFIDENCE",
         }
     )
-    result = verify_label(extraction, _make_application())
+    result = verify_label(extraction, _make_application(), _DUMMY_IMG)
     assert result.summary.low_confidence_count >= 2
     assert result.summary.requires_full_manual_review is True
 
@@ -520,13 +534,13 @@ def test_verify_label_two_low_confidence_triggers_full_review() -> None:
 def test_verify_label_one_low_confidence_does_not_trigger_full_review() -> None:
     extraction = _make_perfect_extraction()
     extraction = extraction.model_copy(update={"brand_name": "LOW_CONFIDENCE"})
-    result = verify_label(extraction, _make_application())
+    result = verify_label(extraction, _make_application(), _DUMMY_IMG)
     assert result.summary.low_confidence_count == 1
     assert result.summary.requires_full_manual_review is False
 
 
 def test_verify_label_all_fields_present_in_result() -> None:
-    result = verify_label(_make_perfect_extraction(), _make_application())
+    result = verify_label(_make_perfect_extraction(), _make_application(), _DUMMY_IMG)
     expected_fields = {
         "brand_name",
         "class_or_type",
@@ -538,8 +552,9 @@ def test_verify_label_all_fields_present_in_result() -> None:
     assert set(result.fields.keys()) == expected_fields
 
 
-def test_verify_label_region_crop_is_none_before_phase_4() -> None:
-    result = verify_label(_make_perfect_extraction(), _make_application())
+def test_verify_label_region_crop_is_none_when_no_bboxes() -> None:
+    """With empty bboxes dict, all region_crop fields should be None."""
+    result = verify_label(_make_perfect_extraction(), _make_application(), _DUMMY_IMG)
     for field in result.fields.values():
         assert field.region_crop is None
     assert result.government_warning.region_crop is None

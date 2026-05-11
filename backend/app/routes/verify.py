@@ -124,7 +124,7 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
             request.application, f"Vision API failed: {e}"
         )
 
-    return verify_label(extracted, request.application)
+    return verify_label(extracted, request.application, image_bytes)
 
 
 @router.post("/verify", response_model=VerificationResult)
