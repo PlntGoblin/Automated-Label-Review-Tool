@@ -218,3 +218,81 @@ body {
   color: #71767a;
   font-size: 0.8125rem;
 }
+
+/* Verify tabs */
+.verify-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #dfe1e2;
+}
+.verify-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.75rem 1.25rem;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #71767a;
+  cursor: pointer;
+  margin-bottom: -2px;
+}
+.verify-tab:hover {
+  color: #1b1b1b;
+}
+.verify-tab--active {
+  color: #005ea2;
+  border-bottom-color: #005ea2;
+}
+
+/* Batch upload */
+.batch-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.batch-upload__section h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Batch results table */
+.batch-table {
+  width: 100%;
+  font-size: 0.875rem;
+}
+.batch-table__sort-btn {
+  background: none;
+  border: none;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  color: #1b1b1b;
+}
+.batch-table__sort-btn:hover {
+  color: #005ea2;
+}
+.batch-table__toggle {
+  background: none;
+  border: none;
+  color: #005ea2;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  padding: 0;
+  text-decoration: underline;
+}
+.batch-table__toggle:hover {
+  color: #1a4480;
+}
+.batch-table__row--expanded > td {
+  background: #f0f0f0;
+  padding: 1rem;
+}
+.batch-table__expanded-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}

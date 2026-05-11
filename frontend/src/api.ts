@@ -18,3 +18,20 @@ export async function verifyLabel(
 
   return (await res.json()) as VerificationResult
 }
+
+export async function verifyBatch(
+  requests: VerifyRequest[],
+): Promise<VerificationResult[]> {
+  const res = await fetch(`${API_BASE}/verify/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requests),
+  })
+
+  if (!res.ok) {
+    const detail = await res.text()
+    throw new Error(`Batch verification failed (${res.status}): ${detail}`)
+  }
+
+  return (await res.json()) as VerificationResult[]
+}

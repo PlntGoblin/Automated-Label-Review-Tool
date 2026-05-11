@@ -55,10 +55,11 @@ describe('App', () => {
     expect(screen.getByText(/TTB COLA Verification/)).toBeInTheDocument()
   })
 
-  it('renders demo section and live verification section', () => {
+  it('renders demo section and verification tabs', () => {
     render(<App />)
     expect(screen.getByText('Quick Demo')).toBeInTheDocument()
-    expect(screen.getByText('Verify Your Own Label')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Single Label/i })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Batch Upload/i })).toBeInTheDocument()
   })
 
   it('renders all three demo scenario cards', () => {
@@ -102,7 +103,7 @@ describe('App', () => {
 
     await userEvent.click(screen.getByText('← New Verification'))
     expect(screen.getByText('Quick Demo')).toBeInTheDocument()
-    expect(screen.getByText('Verify Your Own Label')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Single Label/i })).toBeInTheDocument()
   })
 
   it('disables submit button when no file is selected', () => {
