@@ -109,30 +109,6 @@ export default function App() {
               Automated Label Review Tool — TTB COLA Verification
             </span>
           </div>
-          <nav className="hidden md:flex items-center gap-margin-lg h-full" aria-label="Main navigation">
-            <button
-              type="button"
-              onClick={() => { handleReset(); setActiveTab('single') }}
-              className={`text-label-bold h-full flex items-center border-b-2 transition-colors ${
-                activeTab === 'single' && !result && !batchResults
-                  ? 'text-on-primary border-on-primary'
-                  : 'text-on-primary/70 border-transparent hover:text-on-primary'
-              }`}
-            >
-              Single Label
-            </button>
-            <button
-              type="button"
-              onClick={() => { handleReset(); setActiveTab('batch') }}
-              className={`text-label-bold h-full flex items-center px-4 border-b-2 transition-colors ${
-                activeTab === 'batch' && !result && !batchResults
-                  ? 'text-on-primary border-on-primary'
-                  : 'text-on-primary/70 border-transparent hover:text-on-primary'
-              }`}
-            >
-              Batch Upload
-            </button>
-          </nav>
           <div className="flex items-center gap-2">
             <button type="button" className="text-on-primary hover:bg-white/10 transition-colors p-2 rounded-full" aria-label="Notifications">
               <span className="material-symbols-outlined text-[24px]">notifications</span>

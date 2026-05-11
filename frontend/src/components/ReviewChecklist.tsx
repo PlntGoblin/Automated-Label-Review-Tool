@@ -20,12 +20,20 @@ export default function ReviewChecklist({ result }: ReviewChecklistProps) {
 
       <div className="bg-surface-container-lowest border border-outline-variant p-margin-md">
         <h3 className="text-headline-sm font-semibold text-primary mb-4">Field Comparison</h3>
-        <ul aria-label="Field comparison results" className="divide-y divide-outline-variant">
+        <div
+          role="list"
+          aria-label="Field comparison results"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+        >
           {FIELD_ORDER.map((name) => {
             const field = result.fields[name]
-            return field ? <FieldRow key={name} name={name} result={field} /> : null
+            return field ? (
+              <div key={name} role="listitem">
+                <FieldRow name={name} result={field} />
+              </div>
+            ) : null
           })}
-        </ul>
+        </div>
       </div>
 
       <WarningPanel warning={result.government_warning} />
