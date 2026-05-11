@@ -11,12 +11,16 @@ interface ReviewChecklistProps {
 export default function ReviewChecklist({ result }: ReviewChecklistProps) {
   return (
     <section aria-label="Verification results" className="space-y-margin-md">
-      <h2 className="text-headline-md font-semibold text-primary">Verification Results</h2>
-      <SummaryBar
-        summary={result.summary}
-        manualReviewRequired={result.manual_review_required}
-        errorReason={result.error_reason}
-      />
+      <div className="flex items-center gap-4">
+        <h2 className="text-headline-md font-semibold text-primary shrink-0">Verification Results</h2>
+        <div className="w-3/4 ml-auto">
+          <SummaryBar
+            summary={result.summary}
+            manualReviewRequired={result.manual_review_required}
+            errorReason={result.error_reason}
+          />
+        </div>
+      </div>
 
       <div className="bg-surface-container-lowest border border-outline-variant p-margin-md">
         <h3 className="text-headline-sm font-semibold text-primary mb-4">Field Comparison</h3>

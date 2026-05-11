@@ -8,7 +8,7 @@ interface SummaryBarProps {
 
 export default function SummaryBar({ summary, manualReviewRequired, errorReason }: SummaryBarProps) {
   return (
-    <div className="space-y-3 mb-6">
+    <div className="space-y-2">
       {manualReviewRequired && (
         <div className="bg-amber-50 border border-amber-300 px-4 py-3 flex items-start gap-2" role="alert">
           <span className="material-symbols-outlined text-[18px] text-amber-700 mt-0.5 shrink-0">warning</span>
