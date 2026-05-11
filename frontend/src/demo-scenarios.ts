@@ -7,6 +7,10 @@ export interface DemoScenario {
   result: VerificationResult
 }
 
+// Single source of truth — mirrors backend/app/canonical.py
+const CANONICAL_WARNING =
+  'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.'
+
 const ALL_PASS: VerificationResult = {
   extracted: {
     brand_name: 'Eagle Ridge',
@@ -16,8 +20,7 @@ const ALL_PASS: VerificationResult = {
     bottler_name_and_address: 'Eagle Ridge Distillery, Bardstown, KY 40004',
     country_of_origin: 'United States',
     government_warning: {
-      verbatim_text:
-        'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.',
+      verbatim_text: CANONICAL_WARNING,
       is_all_caps: true,
       is_bold: false,
       is_continuous_paragraph: true,
@@ -42,10 +45,8 @@ const ALL_PASS: VerificationResult = {
   },
   government_warning: {
     status: 'PASS',
-    extracted_text:
-      'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.',
-    canonical_text:
-      'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.',
+    extracted_text: CANONICAL_WARNING,
+    canonical_text: CANONICAL_WARNING,
     is_all_caps: true,
     is_bold: false,
     is_continuous_paragraph: true,
@@ -58,15 +59,14 @@ const ALL_PASS: VerificationResult = {
 
 const MIXED_FLAGS: VerificationResult = {
   extracted: {
-    brand_name: 'Sierra Blanca',
+    brand_name: 'Sierra Blanca Silver',
     class_or_type: 'Tequila',
     alcohol_content: '38% Alc./Vol.',
     net_contents: '1 L',
     bottler_name_and_address: 'Destiladora Sierra Blanca S.A. de C.V., Jalisco, Mexico',
     country_of_origin: 'Mexico',
     government_warning: {
-      verbatim_text:
-        'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.',
+      verbatim_text: CANONICAL_WARNING,
       is_all_caps: false,
       is_bold: true,
       is_continuous_paragraph: true,
@@ -91,10 +91,8 @@ const MIXED_FLAGS: VerificationResult = {
   },
   government_warning: {
     status: 'PASS',
-    extracted_text:
-      'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.',
-    canonical_text:
-      'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.',
+    extracted_text: CANONICAL_WARNING,
+    canonical_text: CANONICAL_WARNING,
     is_all_caps: false,
     is_bold: true,
     is_continuous_paragraph: true,
@@ -138,8 +136,7 @@ const LOW_CONFIDENCE: VerificationResult = {
   government_warning: {
     status: 'LOW_CONFIDENCE',
     extracted_text: null,
-    canonical_text:
-      'GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.',
+    canonical_text: CANONICAL_WARNING,
     is_all_caps: null,
     is_bold: null,
     is_continuous_paragraph: null,
