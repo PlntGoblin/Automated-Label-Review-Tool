@@ -43,12 +43,13 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
   )
 
   const zoneClass = [
-    'drop-zone',
-    dragActive ? 'drop-zone--active' : '',
-    currentFileName ? 'drop-zone--has-file' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
+    'border-2 border-dashed flex flex-col items-center justify-center gap-3 min-h-[220px] p-margin-lg text-center cursor-pointer select-none transition-colors',
+    dragActive
+      ? 'border-primary bg-primary/5'
+      : currentFileName
+        ? 'border-primary bg-surface-container'
+        : 'border-outline-variant bg-surface-container-lowest hover:border-primary hover:bg-surface-container',
+  ].join(' ')
 
   return (
     <div
@@ -67,15 +68,29 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
         type="file"
         accept={ACCEPTED}
         onChange={handleChange}
-        style={{ display: 'none' }}
+        className="hidden"
         aria-hidden="true"
       />
       {currentFileName ? (
-        <p><strong>{currentFileName}</strong> — click or drop to replace</p>
+        <>
+          <span className="material-symbols-outlined text-[36px] text-primary">check_circle</span>
+          <p className="text-label-bold text-on-surface">{currentFileName}</p>
+          <p className="text-label-sm text-secondary">Click or drop to replace</p>
+        </>
       ) : (
         <>
-          <p><strong>Drag & drop</strong> a label image here, or <strong>click to browse</strong></p>
-          <p style={{ fontSize: '0.8125rem', color: '#565c65' }}>JPEG, PNG, or PDF (max 10 MB)</p>
+          <span className="material-symbols-outlined text-[48px] text-outline">cloud_upload</span>
+          <div>
+            <p className="text-body-md text-on-surface font-semibold">Drag &amp; drop a label image</p>
+            <p className="text-label-sm text-secondary mt-1">JPEG, PNG, or PDF (max 10 MB)</p>
+          </div>
+          <button
+            type="button"
+            tabIndex={-1}
+            className="bg-primary text-on-primary text-label-bold px-6 py-2 uppercase tracking-wider hover:opacity-90 transition-opacity"
+          >
+            Select File
+          </button>
         </>
       )}
     </div>

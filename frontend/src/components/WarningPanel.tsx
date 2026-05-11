@@ -12,46 +12,46 @@ function boolLabel(value: boolean | null): string {
 
 export default function WarningPanel({ warning }: WarningPanelProps) {
   return (
-    <div className="warning-panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-        <h3 style={{ margin: 0 }}>Government Warning</h3>
-        <span className={`status-badge ${STATUS_CLASS[warning.status]}`}>
+    <div className="bg-surface-container-lowest border border-outline-variant p-margin-md">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-headline-sm font-semibold text-primary">Government Warning</h3>
+        <span className={STATUS_CLASS[warning.status]}>
           {warning.status.replace('_', ' ')}
         </span>
       </div>
 
-      <div style={{ marginBottom: '0.75rem' }}>
-        <strong>Extracted text:</strong>
-        <div className="warning-panel__text">
-          {warning.extracted_text ?? 'Not found on label'}
+      <div className="space-y-3">
+        <div>
+          <p className="text-label-bold text-secondary uppercase tracking-wider mb-1">Extracted text</p>
+          <p className="font-mono text-body-md text-on-surface bg-surface-container px-3 py-2 border border-outline-variant">
+            {warning.extracted_text ?? <em className="text-secondary not-italic">Not found on label</em>}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-label-bold text-secondary uppercase tracking-wider mb-1">Required text (27 CFR 16.21)</p>
+          <p className="font-mono text-body-md text-on-surface bg-surface-container px-3 py-2 border border-outline-variant">
+            {warning.canonical_text}
+          </p>
+        </div>
+
+        <div className="flex gap-margin-md flex-wrap">
+          <span className="text-label-sm text-secondary">All caps: {boolLabel(warning.is_all_caps)}</span>
+          <span className="text-label-sm text-secondary">Bold: {boolLabel(warning.is_bold)}</span>
+          <span className="text-label-sm text-secondary">Continuous: {boolLabel(warning.is_continuous_paragraph)}</span>
         </div>
       </div>
 
-      <div style={{ marginBottom: '0.75rem' }}>
-        <strong>Required text (27 CFR 16.21):</strong>
-        <div className="warning-panel__text">
-          {warning.canonical_text}
+      {warning.region_crop && (
+        <div className="mt-4">
+          <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Region crop</p>
+          <img
+            src={warning.region_crop}
+            alt="Government warning region crop"
+            className="max-w-full border border-outline-variant"
+          />
         </div>
-      </div>
-
-      <div className="warning-panel__props">
-        <span>All caps: {boolLabel(warning.is_all_caps)}</span>
-        <span>Bold: {boolLabel(warning.is_bold)}</span>
-        <span>Continuous: {boolLabel(warning.is_continuous_paragraph)}</span>
-      </div>
-
-      {warning.region_crop ? (
-        <div style={{ marginTop: '0.75rem' }}>
-          <strong>Region crop:</strong>
-          <div style={{ marginTop: '0.25rem' }}>
-            <img
-              src={warning.region_crop}
-              alt="Government warning region crop"
-              style={{ maxWidth: '100%', border: '1px solid #dfe1e2', borderRadius: '2px' }}
-            />
-          </div>
-        </div>
-      ) : null}
+      )}
     </div>
   )
 }

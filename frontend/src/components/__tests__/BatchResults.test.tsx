@@ -23,8 +23,7 @@ describe('BatchResults', () => {
 
   it('shows Pass badge for clean results', () => {
     render(<BatchResults results={[PASSING_RESULT]} fileNames={['pass.jpg']} />)
-    const badge = screen.getByText('Pass', { selector: '.status-badge' })
-    expect(badge).toBeInTheDocument()
+    expect(screen.getByText('Pass')).toBeInTheDocument()
   })
 
   it('shows Flagged badge for flagged results', () => {

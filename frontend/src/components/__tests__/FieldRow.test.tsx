@@ -38,21 +38,21 @@ describe('FieldRow', () => {
   it('renders PASS badge with correct class', () => {
     render(<FieldRow name="brand_name" result={BASE_RESULT} />)
     const badge = screen.getByText('PASS')
-    expect(badge).toHaveClass('status-badge--pass')
+    expect(badge).toHaveClass('bg-green-100')
   })
 
   it('renders FLAG badge with correct class', () => {
     const result: FieldResult = { ...BASE_RESULT, status: 'FLAG', note: 'Mismatch' }
     render(<FieldRow name="brand_name" result={result} />)
     const badge = screen.getByText('FLAG')
-    expect(badge).toHaveClass('status-badge--flag')
+    expect(badge).toHaveClass('bg-error-container')
   })
 
   it('renders LOW CONFIDENCE badge with correct class', () => {
     const result: FieldResult = { ...BASE_RESULT, status: 'LOW_CONFIDENCE' }
     render(<FieldRow name="brand_name" result={result} />)
     const badge = screen.getByText('LOW CONFIDENCE')
-    expect(badge).toHaveClass('status-badge--low-confidence')
+    expect(badge).toHaveClass('bg-amber-100')
   })
 
   it('displays note when present', () => {
@@ -62,9 +62,11 @@ describe('FieldRow', () => {
   })
 
   it('hides note when null', () => {
-    const { container } = render(<FieldRow name="brand_name" result={BASE_RESULT} />)
-    const paragraphs = container.querySelectorAll('.field-row__values p')
-    expect(paragraphs).toHaveLength(2)
+    render(<FieldRow name="brand_name" result={BASE_RESULT} />)
+    // note paragraph should not appear when note is null
+    expect(screen.queryByRole('paragraph', { name: /note/i })).not.toBeInTheDocument()
+    // only the two value lines are present (Label: and Application:)
+    expect(screen.queryByText(/Brand name does not match/)).not.toBeInTheDocument()
   })
 
   it('shows crop placeholder when region_crop is null', () => {

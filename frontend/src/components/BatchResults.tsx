@@ -59,108 +59,141 @@ export default function BatchResults({ results, fileNames }: BatchResultsProps) 
   }
 
   const totalFlags = results.reduce((sum, r) => sum + r.summary.flag_count, 0)
-  const totalPass = results.filter((r) => r.summary.flag_count === 0 && r.summary.low_confidence_count === 0 && !r.manual_review_required).length
+  const totalPass = results.filter(
+    (r) => r.summary.flag_count === 0 && r.summary.low_confidence_count === 0 && !r.manual_review_required,
+  ).length
 
   const sortIndicator = (key: SortKey) => {
-    if (sortKey !== key) return ''
-    return sortAsc ? ' \u25B2' : ' \u25BC'
+    if (sortKey !== key) return null
+    return (
+      <span className="ml-1 text-[10px]">{sortAsc ? '▲' : '▼'}</span>
+    )
   }
 
+  const thClass = 'text-left text-label-bold text-secondary uppercase tracking-wider py-3 px-4 bg-surface-container border-b border-outline-variant'
+  const tdClass = 'py-3 px-4 text-body-md text-on-surface border-b border-outline-variant'
+
   return (
-    <div className="batch-results">
-      <div className="summary-bar" role="status" aria-label="Batch summary">
-        <div className="summary-stat">
-          <div className="summary-stat__count">{results.length}</div>
-          <div className="summary-stat__label">Labels</div>
+    <div className="space-y-margin-md">
+      {/* Summary */}
+      <div
+        className="grid grid-cols-3 bg-surface-container-lowest border border-outline-variant"
+        role="status"
+        aria-label="Batch summary"
+      >
+        <div className="flex flex-col items-center justify-center py-4 border-r border-outline-variant">
+          <span className="text-[28px] font-black text-on-surface">{results.length}</span>
+          <span className="text-label-sm text-secondary uppercase tracking-wider mt-1">Labels</span>
         </div>
-        <div className="summary-stat">
-          <div className="summary-stat__count" style={{ color: '#216e1f' }}>{totalPass}</div>
-          <div className="summary-stat__label">All Pass</div>
+        <div className="flex flex-col items-center justify-center py-4 border-r border-outline-variant">
+          <span className="text-[28px] font-black text-green-700">{totalPass}</span>
+          <span className="text-label-sm text-secondary uppercase tracking-wider mt-1">All Pass</span>
         </div>
-        <div className="summary-stat">
-          <div className="summary-stat__count" style={{ color: totalFlags > 0 ? '#b50909' : undefined }}>{totalFlags}</div>
-          <div className="summary-stat__label">Total Flags</div>
+        <div className="flex flex-col items-center justify-center py-4">
+          <span className={`text-[28px] font-black ${totalFlags > 0 ? 'text-error' : 'text-on-surface'}`}>
+            {totalFlags}
+          </span>
+          <span className="text-label-sm text-secondary uppercase tracking-wider mt-1">Total Flags</span>
         </div>
       </div>
 
-      <table className="batch-table usa-table usa-table--borderless" aria-label="Batch verification results">
-        <thead>
-          <tr>
-            <th scope="col">
-              <button type="button" className="batch-table__sort-btn" onClick={() => handleSort('filename')}>
-                Filename{sortIndicator('filename')}
-              </button>
-            </th>
-            <th scope="col">
-              <button type="button" className="batch-table__sort-btn" onClick={() => handleSort('status')}>
-                Status{sortIndicator('status')}
-              </button>
-            </th>
-            <th scope="col">
-              <button type="button" className="batch-table__sort-btn" onClick={() => handleSort('flags')}>
-                Flags{sortIndicator('flags')}
-              </button>
-            </th>
-            <th scope="col">Pass</th>
-            <th scope="col">Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map(({ result, fileName, originalIndex }) => {
-            const isExpanded = expandedIndex === originalIndex
-            const hasIssues = result.summary.flag_count > 0 || result.summary.low_confidence_count > 0 || result.manual_review_required
-            return (
-              <tr key={originalIndex} className={isExpanded ? 'batch-table__row--expanded' : ''}>
-                <td colSpan={isExpanded ? 5 : undefined}>
-                  {isExpanded ? (
-                    <div>
-                      <div className="batch-table__expanded-header">
-                        <strong>{fileName}</strong>
+      {/* Table */}
+      <div className="overflow-x-auto bg-surface-container-lowest border border-outline-variant">
+        <table className="w-full" aria-label="Batch verification results">
+          <thead>
+            <tr>
+              <th scope="col" className={thClass}>
+                <button type="button" onClick={() => handleSort('filename')} className="flex items-center hover:text-primary transition-colors">
+                  Filename{sortIndicator('filename')}
+                </button>
+              </th>
+              <th scope="col" className={thClass}>
+                <button type="button" onClick={() => handleSort('status')} className="flex items-center hover:text-primary transition-colors">
+                  Status{sortIndicator('status')}
+                </button>
+              </th>
+              <th scope="col" className={thClass}>
+                <button type="button" onClick={() => handleSort('flags')} className="flex items-center hover:text-primary transition-colors">
+                  Flags{sortIndicator('flags')}
+                </button>
+              </th>
+              <th scope="col" className={thClass}>Passed</th>
+              <th scope="col" className={thClass}>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map(({ result, fileName, originalIndex }) => {
+              const isExpanded = expandedIndex === originalIndex
+              const hasIssues =
+                result.summary.flag_count > 0 ||
+                result.summary.low_confidence_count > 0 ||
+                result.manual_review_required
+
+              return (
+                <tr key={originalIndex} className={isExpanded ? 'bg-surface-container' : 'hover:bg-surface-container-low transition-colors'}>
+                  <td colSpan={isExpanded ? 5 : undefined} className={tdClass}>
+                    {isExpanded ? (
+                      <div>
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="text-label-bold text-on-surface">{fileName}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleExpand(originalIndex)}
+                            className="text-label-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors"
+                            aria-label={`Collapse details for ${fileName}`}
+                          >
+                            <span className="material-symbols-outlined text-[16px]">expand_less</span>
+                            Collapse
+                          </button>
+                        </div>
+                        <ReviewChecklist result={result} />
+                      </div>
+                    ) : (
+                      <span className="font-mono text-[13px]">{fileName}</span>
+                    )}
+                  </td>
+                  {!isExpanded && (
+                    <>
+                      <td className={tdClass}>
+                        <span
+                          className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider ${
+                            result.manual_review_required
+                              ? 'bg-secondary-container text-on-secondary-container'
+                              : hasIssues
+                                ? 'bg-error-container text-on-error-container'
+                                : 'bg-green-100 text-green-800'
+                          }`}
+                        >
+                          {result.manual_review_required
+                            ? 'Manual Review'
+                            : hasIssues
+                              ? 'Flagged'
+                              : 'Pass'}
+                        </span>
+                      </td>
+                      <td className={tdClass}>
+                        {result.summary.flag_count + result.summary.low_confidence_count}
+                      </td>
+                      <td className={tdClass}>{result.summary.pass_count}</td>
+                      <td className={tdClass}>
                         <button
                           type="button"
-                          className="batch-table__toggle"
                           onClick={() => toggleExpand(originalIndex)}
-                          aria-label={`Collapse details for ${fileName}`}
+                          className="text-label-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors"
+                          aria-label={`Expand details for ${fileName}`}
                         >
-                          Collapse
+                          <span className="material-symbols-outlined text-[16px]">expand_more</span>
+                          Expand
                         </button>
-                      </div>
-                      <ReviewChecklist result={result} />
-                    </div>
-                  ) : (
-                    <>{fileName}</>
+                      </td>
+                    </>
                   )}
-                </td>
-                {!isExpanded && (
-                  <>
-                    <td>
-                      <span className={`status-badge ${hasIssues ? 'status-badge--flag' : 'status-badge--pass'}`}>
-                        {result.manual_review_required
-                          ? 'Manual Review'
-                          : hasIssues
-                            ? 'Flagged'
-                            : 'Pass'}
-                      </span>
-                    </td>
-                    <td>{result.summary.flag_count + result.summary.low_confidence_count}</td>
-                    <td>{result.summary.pass_count}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="batch-table__toggle"
-                        onClick={() => toggleExpand(originalIndex)}
-                        aria-label={`Expand details for ${fileName}`}
-                      >
-                        Expand
-                      </button>
-                    </td>
-                  </>
-                )}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

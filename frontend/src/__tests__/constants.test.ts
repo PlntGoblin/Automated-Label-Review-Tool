@@ -14,9 +14,9 @@ describe('constants', () => {
   })
 
   it('STATUS_CLASS covers all three statuses', () => {
-    expect(STATUS_CLASS.PASS).toBe('status-badge--pass')
-    expect(STATUS_CLASS.FLAG).toBe('status-badge--flag')
-    expect(STATUS_CLASS.LOW_CONFIDENCE).toBe('status-badge--low-confidence')
+    expect(STATUS_CLASS.PASS).toContain('bg-green-100')
+    expect(STATUS_CLASS.FLAG).toContain('bg-error-container')
+    expect(STATUS_CLASS.LOW_CONFIDENCE).toContain('bg-amber-100')
   })
 
   it('FIELD_ORDER matches backend field names', () => {

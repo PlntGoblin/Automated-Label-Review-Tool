@@ -37,7 +37,7 @@ describe('WarningPanel', () => {
 
   it('renders status badge', () => {
     render(<WarningPanel warning={BASE_WARNING} />)
-    expect(screen.getByText('PASS')).toHaveClass('status-badge--pass')
+    expect(screen.getByText('PASS')).toHaveClass('bg-green-100')
   })
 
   it('displays visual properties', () => {

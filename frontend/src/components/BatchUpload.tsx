@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { Button, Alert } from '@trussworks/react-uswds'
 import type { ApplicationData, VerifyRequest } from '../types'
 import { FIELD_ORDER } from '../constants'
 import { fileToBase64 } from '../util'
@@ -135,7 +134,12 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
     return errors
   }, [imageFiles, csvRows])
 
-  const canSubmit = imageFiles.length > 0 && csvRows.length > 0 && matchErrors.length === 0 && validationErrors.length === 0 && !disabled
+  const canSubmit =
+    imageFiles.length > 0 &&
+    csvRows.length > 0 &&
+    matchErrors.length === 0 &&
+    validationErrors.length === 0 &&
+    !disabled
 
   const handleSubmit = async () => {
     if (matchErrors.length > 0) {
@@ -162,80 +166,115 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
 
   const allErrors = [...validationErrors, ...matchErrors]
 
-  return (
-    <div className="batch-upload">
-      <div className="batch-upload__section">
-        <h4>Label Images</h4>
-        <div
-          className={`drop-zone ${imageFiles.length > 0 ? 'drop-zone--has-file' : ''}`}
-          onClick={() => imageInputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') imageInputRef.current?.click() }}
-          aria-label="Upload label images for batch"
-        >
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept={IMAGE_ACCEPT}
-            multiple
-            onChange={(e) => handleImageFiles(e.target.files)}
-            style={{ display: 'none' }}
-            aria-hidden="true"
-          />
-          {imageFiles.length > 0 ? (
-            <p><strong>{imageFiles.length} file{imageFiles.length !== 1 ? 's' : ''}</strong> selected — click to change</p>
-          ) : (
-            <p><strong>Click to select</strong> label images (JPEG, PNG, or PDF)</p>
-          )}
-        </div>
-      </div>
+  const dropZoneClass = (active: boolean) =>
+    `border-2 border-dashed flex flex-col items-center justify-center gap-2 min-h-[120px] p-margin-md text-center cursor-pointer select-none transition-colors ${
+      active
+        ? 'border-primary bg-primary/5'
+        : 'border-outline-variant bg-surface-container-lowest hover:border-primary hover:bg-surface-container'
+    }`
 
-      <div className="batch-upload__section">
-        <h4>Application Data (CSV)</h4>
-        <div
-          className={`drop-zone ${csvFileName ? 'drop-zone--has-file' : ''}`}
-          onClick={() => csvInputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') csvInputRef.current?.click() }}
-          aria-label="Upload CSV with application data"
-        >
-          <input
-            ref={csvInputRef}
-            type="file"
-            accept={CSV_ACCEPT}
-            onChange={(e) => {
-              const file = e.target.files?.[0]
-              if (file) handleCSVFile(file)
-            }}
-            style={{ display: 'none' }}
-            aria-hidden="true"
-          />
-          {csvFileName ? (
-            <p><strong>{csvFileName}</strong> — {csvRows.length} row{csvRows.length !== 1 ? 's' : ''} parsed — click to change</p>
-          ) : (
-            <>
-              <p><strong>Click to select</strong> a CSV file with application data</p>
-              <p style={{ fontSize: '0.75rem', color: '#565c65' }}>
-                Columns: filename, brand_name, class_or_type, alcohol_content, net_contents, bottler_name_and_address, country_of_origin
-              </p>
-            </>
-          )}
+  return (
+    <div className="space-y-margin-md">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+        {/* Images */}
+        <div>
+          <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Label Images</p>
+          <div
+            className={dropZoneClass(false)}
+            onClick={() => imageInputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') imageInputRef.current?.click() }}
+            aria-label="Upload label images for batch"
+          >
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept={IMAGE_ACCEPT}
+              multiple
+              onChange={(e) => handleImageFiles(e.target.files)}
+              className="hidden"
+              aria-hidden="true"
+            />
+            <span className="material-symbols-outlined text-[32px] text-outline">photo_library</span>
+            {imageFiles.length > 0 ? (
+              <>
+                <p className="text-label-bold text-on-surface">
+                  {imageFiles.length} file{imageFiles.length !== 1 ? 's' : ''} selected
+                </p>
+                <p className="text-label-sm text-secondary">Click to change</p>
+              </>
+            ) : (
+              <>
+                <p className="text-label-bold text-on-surface">Click to select images</p>
+                <p className="text-label-sm text-secondary">JPEG, PNG, or PDF</p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* CSV */}
+        <div>
+          <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Application Data (CSV)</p>
+          <div
+            className={dropZoneClass(false)}
+            onClick={() => csvInputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') csvInputRef.current?.click() }}
+            aria-label="Upload CSV with application data"
+          >
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept={CSV_ACCEPT}
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleCSVFile(file)
+              }}
+              className="hidden"
+              aria-hidden="true"
+            />
+            <span className="material-symbols-outlined text-[32px] text-outline">table_chart</span>
+            {csvFileName ? (
+              <>
+                <p className="text-label-bold text-on-surface">{csvFileName}</p>
+                <p className="text-label-sm text-secondary">{csvRows.length} row{csvRows.length !== 1 ? 's' : ''} parsed — click to change</p>
+              </>
+            ) : (
+              <>
+                <p className="text-label-bold text-on-surface">Click to select CSV</p>
+                <p className="text-label-sm text-secondary font-mono text-[11px]">
+                  Columns: filename, brand_name, class_or_type, alcohol_content, net_contents, bottler_name_and_address, country_of_origin
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {allErrors.length > 0 && (
-        <Alert type="error" headingLevel="h4" heading="Validation errors" slim>
-          <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
-            {allErrors.map((err, i) => <li key={i}>{err}</li>)}
+        <div className="bg-error-container text-on-error-container px-4 py-3 flex items-start gap-2" role="alert">
+          <span className="material-symbols-outlined text-[18px] mt-0.5 shrink-0">error</span>
+          <ul className="space-y-0.5">
+            {allErrors.map((err, i) => (
+              <li key={i} className="text-label-bold">{err}</li>
+            ))}
           </ul>
-        </Alert>
+        </div>
       )}
 
-      <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
-        Verify {csvRows.length > 0 ? `${csvRows.length} Labels` : 'Batch'}
-      </Button>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className="bg-primary text-on-primary text-label-bold px-12 py-3 uppercase flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <span className="material-symbols-outlined">batch_prediction</span>
+          Verify {csvRows.length > 0 ? `${csvRows.length} Label${csvRows.length !== 1 ? 's' : ''}` : 'Batch'}
+        </button>
+      </div>
     </div>
   )
 }

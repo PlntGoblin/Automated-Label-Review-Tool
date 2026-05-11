@@ -19,7 +19,7 @@ export const FIELD_ORDER = [
 ] as const
 
 export const STATUS_CLASS: Record<FieldStatus, string> = {
-  PASS: 'status-badge--pass',
-  FLAG: 'status-badge--flag',
-  LOW_CONFIDENCE: 'status-badge--low-confidence',
+  PASS: 'inline-flex items-center text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider bg-green-100 text-green-800',
+  FLAG: 'inline-flex items-center text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider bg-error-container text-on-error-container',
+  LOW_CONFIDENCE: 'inline-flex items-center text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider bg-amber-100 text-amber-800',
 }

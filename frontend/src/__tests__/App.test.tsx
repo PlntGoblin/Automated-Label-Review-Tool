@@ -51,7 +51,8 @@ describe('App', () => {
 
   it('renders the header', () => {
     render(<App />)
-    expect(screen.getByText('ALRT')).toBeInTheDocument()
+    // ALRT appears in both header and footer — check at least one exists
+    expect(screen.getAllByText('ALRT').length).toBeGreaterThan(0)
     expect(screen.getByText(/TTB COLA Verification/)).toBeInTheDocument()
   })
 
@@ -101,21 +102,21 @@ describe('App', () => {
     await userEvent.click(screen.getByText('All Fields Pass'))
     expect(screen.getByText('Verification Results')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByText('← New Verification'))
+    await userEvent.click(screen.getByRole('button', { name: /New Verification/i }))
     expect(screen.getByText('Quick Demo')).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: /Single Label/i })).toBeInTheDocument()
   })
 
   it('disables submit button when no file is selected', () => {
     render(<App />)
-    const button = screen.getByRole('button', { name: 'Verify Label' })
+    const button = screen.getByRole('button', { name: /Run Automated Review/i })
     expect(button).toBeDisabled()
   })
 
   it('enables submit when file + required fields are present', async () => {
     render(<App />)
     await setupFileAndFields()
-    const button = screen.getByRole('button', { name: 'Verify Label' })
+    const button = screen.getByRole('button', { name: /Run Automated Review/i })
     expect(button).toBeEnabled()
   })
 
@@ -124,7 +125,7 @@ describe('App', () => {
     render(<App />)
     await setupFileAndFields()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Verify Label' }))
+    await userEvent.click(screen.getByRole('button', { name: /Run Automated Review/i }))
 
     expect(await screen.findByText('Verification Results')).toBeInTheDocument()
     expect(screen.getByText(/label\.jpg/)).toBeInTheDocument()
@@ -135,7 +136,7 @@ describe('App', () => {
     render(<App />)
     await setupFileAndFields()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Verify Label' }))
+    await userEvent.click(screen.getByRole('button', { name: /Run Automated Review/i }))
 
     expect(await screen.findByText(/Network error/)).toBeInTheDocument()
   })
@@ -145,13 +146,13 @@ describe('App', () => {
     render(<App />)
     await setupFileAndFields()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Verify Label' }))
+    await userEvent.click(screen.getByRole('button', { name: /Run Automated Review/i }))
     await screen.findByText('Verification Results')
 
-    await userEvent.click(screen.getByText('← New Verification'))
+    await userEvent.click(screen.getByRole('button', { name: /New Verification/i }))
 
     expect(screen.getByText('Quick Demo')).toBeInTheDocument()
-    expect(screen.getByText('1. Upload Label Image')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Upload label image' })).toBeInTheDocument()
   })
 
   it('loading spinner has accessible role', async () => {
@@ -159,10 +160,10 @@ describe('App', () => {
     render(<App />)
     await setupFileAndFields()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Verify Label' }))
+    await userEvent.click(screen.getByRole('button', { name: /Run Automated Review/i }))
 
     const spinner = await screen.findByRole('status')
     expect(spinner).toHaveAttribute('aria-live', 'polite')
-    expect(screen.getByText('Analyzing label with AI vision...')).toBeInTheDocument()
+    expect(screen.getByText(/Analyzing label with AI vision/)).toBeInTheDocument()
   })
 })

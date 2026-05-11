@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Button, Alert } from '@trussworks/react-uswds'
 import type { ApplicationData, VerificationResult, VerifyRequest } from './types'
 import { verifyLabel, verifyBatch } from './api'
 import { DEMO_SCENARIOS } from './demo-scenarios'
@@ -17,6 +16,18 @@ const EMPTY_APPLICATION: ApplicationData = {
   bottler_name_and_address: '',
   country_of_origin: '',
 }
+
+const DEMO_IMAGES = [
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuCbAxktmPCZyYBlgwcl9mPwGMh3M8gZos36-ZIO1Wfmi1Wb3wE3yQFTirixSL_dcqyaPyNK4q9wSQQBmUl8xDB-wn6gGhQTg7CUME6l6jh9We7nzEgjGn4sRNUSMpkTJaj06O14PvI9YeGvZX-V5m5keqYY-VesG0D2n3x0nTwS4ICHE9-yPrp6EHQ90xdfX8MUPT9D2KBhh34gtA-A2Hbo3267kQMwHdc6xGGjVFOpmrojj27AfvQHi_YPX9QAlu9_vwBoVSVKJA0',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuDljnDeTRi91OJWq4FV2pV9WIgXS7YPEAjlpwQrWZjwwpHNKaQMKojmPSXY-mDFDSKhx9m4PQhvsWmTubH_qNTqRRu0jrQthTute2MucfattkUODUEt-PZHwnNp2iHQlkf0gUNP-zC_66-SVQErHtsW21u2iYPhB6yLQayU5lE1a0Z4X6RIOXLBz-48Qngge3Xn15NwufZTwKgkbKMXqZCH9-JsWeJ9TfgJCCnjPfaB9pWHzgVgKX8VSoqpj7uALXAURZN4O8ohtaE',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAA75QsLrDCqQkK8FTkNHujury4HXtIZPs9G2GLiv6ptPtLVatrojNepmgCAGcDO9ygX44jcwmI0kGso_Zl3RlnXeO7EJ2LmLpDt9AtBv2P4EgiiaOSnNuZq0h2-UfBHogASkBvWigG1p8o7JwhcWfmIhaNiKNqzt7I_cGUuRmL684BdBPGJRZyPEbhoR9mY1uEo9GfoHm0VyQNKWxXjDTjhsKLXl65JHHx02q8SbngLniQYVkgmPauWkPg1mwzRuepFP0t9wIaUK8',
+]
+
+const DEMO_BADGES = [
+  { label: 'PASS', icon: 'check_circle', className: 'bg-green-100 text-green-800' },
+  { label: 'FLAGGED', icon: 'warning', className: 'bg-error-container text-on-error-container' },
+  { label: 'MANUAL REVIEW', icon: 'visibility', className: 'bg-secondary-container text-on-secondary-container' },
+]
 
 export default function App() {
   const [labelBase64, setLabelBase64] = useState<string | null>(null)
@@ -42,10 +53,7 @@ export default function App() {
     setError(null)
     setResult(null)
     try {
-      const res = await verifyLabel({
-        label_image: labelBase64,
-        application,
-      })
+      const res = await verifyLabel({ label_image: labelBase64, application })
       setResult(res)
       setResultLabel(fileName)
     } catch (e) {
@@ -96,129 +104,242 @@ export default function App() {
   }
 
   return (
-    <>
-      <header className="alrt-header">
-        <h1>ALRT</h1>
-        <p>Automated Label Review Tool — TTB COLA Verification</p>
+    <div className="min-h-screen flex flex-col bg-[#F8F9FA] font-sans">
+      {/* Header */}
+      <header className="bg-primary border-b border-outline-variant sticky top-0 z-50">
+        <div className="flex justify-between items-center px-margin-lg w-full max-w-max-width mx-auto h-16">
+          <div className="flex items-center gap-margin-md">
+            <span className="text-headline-md font-black text-on-primary">ALRT</span>
+            <div className="hidden lg:block h-6 w-px bg-white/30 mx-2" />
+            <span className="hidden lg:block text-label-bold text-on-primary/80">
+              Automated Label Review Tool — TTB COLA Verification
+            </span>
+          </div>
+          <nav className="hidden md:flex items-center gap-margin-lg h-full" aria-label="Main navigation">
+            <button
+              type="button"
+              onClick={() => { handleReset(); setActiveTab('single') }}
+              className={`text-label-bold h-full flex items-center border-b-2 transition-colors ${
+                activeTab === 'single' && !result && !batchResults
+                  ? 'text-on-primary border-on-primary'
+                  : 'text-on-primary/70 border-transparent hover:text-on-primary'
+              }`}
+            >
+              Single Label
+            </button>
+            <button
+              type="button"
+              onClick={() => { handleReset(); setActiveTab('batch') }}
+              className={`text-label-bold h-full flex items-center px-4 border-b-2 transition-colors ${
+                activeTab === 'batch' && !result && !batchResults
+                  ? 'text-on-primary border-on-primary'
+                  : 'text-on-primary/70 border-transparent hover:text-on-primary'
+              }`}
+            >
+              Batch Upload
+            </button>
+          </nav>
+          <div className="flex items-center gap-2">
+            <button type="button" className="text-on-primary hover:bg-white/10 transition-colors p-2 rounded-full" aria-label="Notifications">
+              <span className="material-symbols-outlined text-[24px]">notifications</span>
+            </button>
+            <button type="button" className="text-on-primary hover:bg-white/10 transition-colors p-2 rounded-full" aria-label="Account">
+              <span className="material-symbols-outlined text-[24px]">account_circle</span>
+            </button>
+          </div>
+        </div>
       </header>
 
-      <main className="alrt-main">
+      {/* Main */}
+      <main className="flex-1 max-w-max-width mx-auto w-full px-margin-lg py-margin-lg space-y-margin-lg">
+
         {result ? (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 className="usa-heading" style={{ margin: 0 }}>
-                Results{resultLabel ? ` — ${resultLabel}` : ''}
+          /* ── Single results view ── */
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-headline-md font-headline-md text-primary">
+                {resultLabel ?? 'Results'}
               </h2>
-              <Button type="button" unstyled onClick={handleReset}>
-                ← New Verification
-              </Button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="text-label-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                New Verification
+              </button>
             </div>
             <ReviewChecklist result={result} />
-          </>
+          </div>
+
         ) : batchResults ? (
-          <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 className="usa-heading" style={{ margin: 0 }}>
+          /* ── Batch results view ── */
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-headline-md font-headline-md text-primary">
                 Batch Results — {batchResults.length} label{batchResults.length !== 1 ? 's' : ''}
               </h2>
-              <Button type="button" unstyled onClick={handleReset}>
-                ← New Verification
-              </Button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="text-label-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                New Verification
+              </button>
             </div>
             <BatchResults results={batchResults} fileNames={batchFileNames} />
-          </>
+          </div>
+
         ) : (
+          /* ── Landing page ── */
           <>
-            <section style={{ marginBottom: '2rem' }}>
-              <h2 className="usa-heading">Quick Demo</h2>
-              <p style={{ fontSize: '0.875rem', color: '#565c65', marginBottom: '0.75rem' }}>
-                Try a pre-loaded scenario to see how ALRT compares label data against a COLA application.
-              </p>
-              <div className="demo-cards">
-                {DEMO_SCENARIOS.map((scenario) => (
-                  <button
-                    key={scenario.id}
-                    className="demo-card"
-                    onClick={() => handleDemo(scenario.id)}
-                    type="button"
-                  >
-                    <strong>{scenario.title}</strong>
-                    <span>{scenario.description}</span>
-                  </button>
-                ))}
-              </div>
+            {/* Demo section */}
+            <section>
+              <h1 className="text-display-lg text-primary mb-1">Quick Demo</h1>
+              <p className="text-body-lg text-secondary">Select a scenario to see the automated verification in action.</p>
             </section>
 
-            <hr style={{ border: 'none', borderTop: '1px solid #dfe1e2', margin: '1.5rem 0' }} />
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter max-w-4xl" aria-label="Demo scenarios">
+              {DEMO_SCENARIOS.map((scenario, i) => {
+                const badge = DEMO_BADGES[i]!
+                return (
+                  <button
+                    key={scenario.id}
+                    type="button"
+                    onClick={() => handleDemo(scenario.id)}
+                    className="bg-surface-container-lowest border border-outline-variant hover:border-primary transition-all cursor-pointer group relative overflow-hidden p-margin-sm text-left"
+                    aria-label={`Load ${scenario.title} demo`}
+                  >
+                    <div className={`absolute top-margin-sm right-margin-sm ${badge.className} text-[10px] font-bold px-2 py-1 flex items-center gap-1 uppercase tracking-wider`}>
+                      <span className="material-symbols-outlined text-[14px]">{badge.icon}</span>
+                      {badge.label}
+                    </div>
+                    <div className="mb-4 aspect-[3/4] bg-surface-container overflow-hidden">
+                      <img
+                        src={DEMO_IMAGES[i]}
+                        alt={scenario.title}
+                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                      />
+                    </div>
+                    <h3 className="text-headline-sm text-primary mb-1">{scenario.title}</h3>
+                    <p className="text-label-sm text-secondary">{scenario.description}</p>
+                  </button>
+                )
+              })}
+            </section>
 
-            <div className="verify-tabs" role="tablist" aria-label="Verification mode">
-              <button
-                role="tab"
-                id="tab-single"
-                aria-selected={activeTab === 'single'}
-                aria-controls="tabpanel-single"
-                className={`verify-tab ${activeTab === 'single' ? 'verify-tab--active' : ''}`}
-                onClick={() => setActiveTab('single')}
-                type="button"
-              >
-                Single Label
-              </button>
-              <button
-                role="tab"
-                id="tab-batch"
-                aria-selected={activeTab === 'batch'}
-                aria-controls="tabpanel-batch"
-                className={`verify-tab ${activeTab === 'batch' ? 'verify-tab--active' : ''}`}
-                onClick={() => setActiveTab('batch')}
-                type="button"
-              >
-                Batch Upload
-              </button>
-            </div>
-
-            {error && (
-              <Alert type="error" headingLevel="h3" heading="Error" slim>
-                {error}
-              </Alert>
-            )}
-
-            {loading ? (
-              <div className="loading-overlay" role="status" aria-live="polite">
-                <div className="loading-spinner" aria-hidden="true" />
-                <p>{activeTab === 'batch' ? 'Analyzing batch with AI vision...' : 'Analyzing label with AI vision...'}</p>
+            {/* Upload section */}
+            <section className="bg-surface-container-lowest border border-outline-variant">
+              {/* Tab headers */}
+              <div className="flex border-b border-outline-variant" role="tablist" aria-label="Verification mode">
+                <button
+                  role="tab"
+                  id="tab-single"
+                  aria-selected={activeTab === 'single'}
+                  aria-controls="tabpanel-single"
+                  type="button"
+                  onClick={() => setActiveTab('single')}
+                  className={`px-margin-lg py-margin-md text-label-bold border-b-2 transition-colors ${
+                    activeTab === 'single'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-secondary hover:text-primary'
+                  }`}
+                >
+                  Single Label
+                </button>
+                <button
+                  role="tab"
+                  id="tab-batch"
+                  aria-selected={activeTab === 'batch'}
+                  aria-controls="tabpanel-batch"
+                  type="button"
+                  onClick={() => setActiveTab('batch')}
+                  className={`px-margin-lg py-margin-md text-label-bold border-b-2 transition-colors ${
+                    activeTab === 'batch'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-secondary hover:text-primary'
+                  }`}
+                >
+                  Batch Upload
+                </button>
               </div>
-            ) : activeTab === 'single' ? (
-              <div role="tabpanel" id="tabpanel-single" aria-labelledby="tab-single">
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3>1. Upload Label Image</h3>
+
+              {/* Error */}
+              {error && (
+                <div className="mx-margin-lg mt-margin-md bg-error-container text-on-error-container px-4 py-3 flex items-start gap-2" role="alert">
+                  <span className="material-symbols-outlined text-[18px] mt-0.5 shrink-0">error</span>
+                  <span className="text-label-bold">{error}</span>
+                </div>
+              )}
+
+              {/* Loading */}
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-4" role="status" aria-live="polite">
+                  <div className="w-10 h-10 border-4 border-outline-variant border-t-primary rounded-full animate-spin" aria-hidden="true" />
+                  <p className="text-label-bold text-secondary uppercase tracking-wider">
+                    {activeTab === 'batch' ? 'Analyzing batch with AI vision…' : 'Analyzing label with AI vision…'}
+                  </p>
+                </div>
+
+              ) : activeTab === 'single' ? (
+                <div
+                  role="tabpanel"
+                  id="tabpanel-single"
+                  aria-labelledby="tab-single"
+                  className="grid grid-cols-1 lg:grid-cols-2 p-margin-lg gap-margin-lg"
+                >
                   <LabelUpload onFileSelected={handleFileSelected} currentFileName={fileName} />
+                  <div className="space-y-4">
+                    <ApplicationForm data={application} onChange={setApplication} disabled={loading} />
+                    <div className="pt-margin-md flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={!canSubmit}
+                        className="bg-primary text-on-primary text-label-bold px-12 py-3 uppercase flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <span className="material-symbols-outlined">barcode_reader</span>
+                        Run Automated Review
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3>2. Enter Application Data</h3>
-                  <ApplicationForm data={application} onChange={setApplication} disabled={loading} />
-                </div>
-
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
-                    Verify Label
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div role="tabpanel" id="tabpanel-batch" aria-labelledby="tab-batch">
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3>Upload Labels + CSV</h3>
-                  <p style={{ fontSize: '0.875rem', color: '#565c65', marginBottom: '0.75rem' }}>
+              ) : (
+                <div
+                  role="tabpanel"
+                  id="tabpanel-batch"
+                  aria-labelledby="tab-batch"
+                  className="p-margin-lg"
+                >
+                  <p className="text-body-md text-secondary mb-margin-md">
                     Upload multiple label images and a CSV with application data. Filenames in the CSV must match the uploaded image filenames.
                   </p>
                   <BatchUpload onSubmit={handleBatchSubmit} disabled={loading} />
                 </div>
-              </div>
-            )}
+              )}
+            </section>
           </>
         )}
       </main>
-    </>
+
+      {/* Footer */}
+      <footer className="bg-surface-container-low border-t border-outline-variant mt-12">
+        <div className="flex flex-col md:flex-row justify-between items-center py-margin-md px-margin-lg w-full max-w-max-width mx-auto gap-4">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <span className="text-label-bold text-on-surface">ALRT</span>
+            <span className="text-label-sm text-secondary">© 2026 TTB Automated Label Review Tool. United States Government.</span>
+          </div>
+          <div className="flex flex-wrap justify-center gap-margin-md">
+            {['Privacy Policy', 'Terms of Service', 'Agency Information', 'Accessibility'].map((link) => (
+              <a key={link} href="#" className="text-label-sm text-secondary hover:text-primary hover:underline transition-colors">
+                {link}
+              </a>
+            ))}
+          </div>
+        </div>
+      </footer>
+    </div>
   )
 }
