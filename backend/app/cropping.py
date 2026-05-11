@@ -25,7 +25,8 @@ _MIN_DIMENSION = 20
 _MAX_AREA_FRACTION = 0.9
 
 # Padding added on each side for visual context, as a fraction of the bbox dimension.
-_PAD_FRACTION = 0.10
+# 20% gives enough buffer that slightly inaccurate model bboxes still capture the full text.
+_PAD_FRACTION = 0.20
 
 
 def crop_region(

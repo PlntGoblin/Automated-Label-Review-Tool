@@ -9,6 +9,15 @@ interface ApplicationFormProps {
 
 const REQUIRED_FIELDS = new Set(['brand_name', 'class_or_type'])
 
+const PLACEHOLDERS: Record<string, string> = {
+  brand_name:               'e.g. Bison Creek IPA',
+  class_or_type:            'e.g. India Pale Ale',
+  alcohol_content:          'e.g. 6.5% or 6.5% Alc./Vol.',
+  net_contents:             'e.g. 12 fl oz or 355 mL',
+  bottler_name_and_address: 'e.g. Brewed and Bottled by Acme Brewing Co., Denver, CO.',
+  country_of_origin:        'e.g. United States or USA',
+}
+
 export default function ApplicationForm({ data, onChange, disabled }: ApplicationFormProps) {
   return (
     <fieldset disabled={disabled} className="space-y-3 min-w-0">
@@ -37,6 +46,7 @@ export default function ApplicationForm({ data, onChange, disabled }: Applicatio
                 id={key}
                 name={key}
                 rows={3}
+                placeholder={PLACEHOLDERS[key]}
                 value={data[key]}
                 onChange={(e) => onChange({ ...data, [key]: e.target.value })}
                 className={`${inputClass} font-mono resize-none`}
@@ -46,6 +56,7 @@ export default function ApplicationForm({ data, onChange, disabled }: Applicatio
                 id={key}
                 name={key}
                 type="text"
+                placeholder={PLACEHOLDERS[key]}
                 value={data[key]}
                 onChange={(e) => onChange({ ...data, [key]: e.target.value })}
                 className={inputClass}

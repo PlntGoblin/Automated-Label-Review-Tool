@@ -61,14 +61,22 @@ _WINE_TERMS = frozenset(
 
 
 def normalize_for_brand(s: str) -> str:
-    """Lowercase, strip punctuation, collapse whitespace."""
+    """Lowercase, replace punctuation with spaces, collapse whitespace.
+
+    Using a space replacement (not deletion) ensures 'BOULDER,CO' and
+    'BOULDER, CO' both normalize to 'boulder co' rather than 'boulderco'.
+    """
     s = unicodedata.normalize("NFC", s).lower()
-    s = re.sub(r"[^\w\s]", "", s)
+    s = re.sub(r"[^\w\s]", " ", s)
     return re.sub(r"\s+", " ", s).strip()
 
 
 def parse_abv(s: str) -> float | None:
-    """Extract a percentage float from strings like '45% Alc./Vol.', '12% ABV', '90 Proof'."""
+    """Extract a percentage float from strings like '45% Alc./Vol.', '12% ABV', '90 Proof'.
+
+    Also accepts bare numbers (e.g. '6.5') as a fallback so reviewers who
+    enter just the digits in the application form don't get a parse failure.
+    """
     # Proof: "90 proof" → 45.0 ABV
     proof_match = re.search(r"(\d+(?:\.\d+)?)\s*proof", s, re.IGNORECASE)
     if proof_match:
@@ -77,6 +85,10 @@ def parse_abv(s: str) -> float | None:
     pct_match = re.search(r"(\d+(?:\.\d+)?)\s*%", s)
     if pct_match:
         return float(pct_match.group(1))
+    # Bare number fallback: "6.5" (application data often omits the % sign)
+    bare_match = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*", s)
+    if bare_match:
+        return float(bare_match.group(1))
     return None
 
 
@@ -98,10 +110,36 @@ def parse_volume_ml(s: str) -> float | None:
     return None
 
 
+def _clean_country(s: str) -> str:
+    """Lowercase, replace punctuation with spaces, collapse whitespace."""
+    s = re.sub(r"[^\w\s]", " ", s.strip().lower())
+    return re.sub(r"\s+", " ", s).strip()
+
+
+# Pre-build a normalized alias table so dots in keys (u.s.a.) still match.
+_COUNTRY_ALIASES_CLEAN: dict[str, str] = {
+    _clean_country(k): v for k, v in _COUNTRY_ALIASES.items()
+}
+
+
 def standardize_country(s: str) -> str:
-    """Normalize country of origin; USA ≡ United States ≡ U.S.A. → 'UNITED STATES'."""
-    key = re.sub(r"\s+", " ", s.strip().lower())
-    return _COUNTRY_ALIASES.get(key, s.strip().upper())
+    """Normalize country of origin; USA ≡ United States ≡ U.S.A. → 'UNITED STATES'.
+
+    Also handles label phrases like 'PRODUCT OF U.S.A.' or 'IMPORTED FROM USA'
+    by checking whether any alias word-sequence appears anywhere in the text.
+    """
+    cleaned = _clean_country(s)
+
+    # Direct match on the whole string.
+    if cleaned in _COUNTRY_ALIASES_CLEAN:
+        return _COUNTRY_ALIASES_CLEAN[cleaned]
+
+    # Substring match — handles 'product of usa', 'imported from united states', etc.
+    for alias_clean, canonical in _COUNTRY_ALIASES_CLEAN.items():
+        if re.search(rf"\b{re.escape(alias_clean)}\b", cleaned):
+            return canonical
+
+    return s.strip().upper()
 
 
 # ---------------------------------------------------------------------------
