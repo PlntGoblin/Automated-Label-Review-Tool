@@ -3,6 +3,7 @@ import { STATUS_CLASS } from '../constants'
 
 interface WarningPanelProps {
   warning: WarningResult
+  compact?: boolean
 }
 
 function boolLabel(value: boolean | null): string {
@@ -10,7 +11,31 @@ function boolLabel(value: boolean | null): string {
   return value ? 'Yes' : 'No'
 }
 
-export default function WarningPanel({ warning }: WarningPanelProps) {
+export default function WarningPanel({ warning, compact = false }: WarningPanelProps) {
+  if (compact) {
+    return (
+      <div className="bg-surface-container-lowest border border-outline-variant overflow-hidden">
+        <div className="bg-primary/90 px-3 py-1.5 flex items-center justify-between">
+          <span className="text-label-bold text-on-primary font-black uppercase tracking-wider">Gov't Warning</span>
+          <span className={STATUS_CLASS[warning.status]}>
+            {warning.status.replace('_', ' ')}
+          </span>
+        </div>
+        <div className="px-3 py-2 space-y-1">
+          <p className="text-body-md text-on-surface">
+            <span className="text-label-sm text-secondary uppercase tracking-wider mr-1">Label:</span>
+            {warning.extracted_text ?? <em className="text-secondary">Not found</em>}
+          </p>
+          <div className="flex gap-3 flex-wrap pt-1">
+            <span className="text-label-sm text-secondary">All caps: {boolLabel(warning.is_all_caps)}</span>
+            <span className="text-label-sm text-secondary">Bold: {boolLabel(warning.is_bold)}</span>
+            <span className="text-label-sm text-secondary">Continuous: {boolLabel(warning.is_continuous_paragraph)}</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-surface-container-lowest border border-outline-variant p-margin-md">
       <div className="flex justify-between items-center mb-4">

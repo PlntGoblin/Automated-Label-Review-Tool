@@ -73,3 +73,101 @@ bboxes
   original image pixel space: x and y are the top-left corner, width and height are the
   dimensions of the region. Be generous — include a small margin around the text so the
   crop is readable in isolation. Omit a key entirely when the corresponding field is null.
+
+---
+
+COMPLETE EXTRACTION EXAMPLES
+
+The following are full correct extractions for three representative label types. Study the
+output format, field completeness, and verbatim accuracy expected.
+
+EXAMPLE 1 — Domestic Craft Beer (12 oz can)
+Label description: Front panel shows "BISON CREEK IPA" large, "INDIA PALE ALE" below it.
+Side panel shows "6.2% ALC./VOL.", "NET CONTENTS: 12 FL OZ (355 mL)",
+"BREWED AND BOTTLED BY BISON CREEK BREWING CO., 1250 WALNUT ST, BOULDER, CO 80302",
+and the government warning printed sideways in small all-caps bold text.
+
+{
+  "brand_name": "BISON CREEK IPA",
+  "class_or_type": "INDIA PALE ALE",
+  "alcohol_content": "6.2% ALC./VOL.",
+  "net_contents": "12 FL OZ (355 mL)",
+  "bottler_name_and_address": "BREWED AND BOTTLED BY BISON CREEK BREWING CO., 1250 WALNUT ST, BOULDER, CO 80302",
+  "country_of_origin": null,
+  "government_warning": {
+    "verbatim_text": "GOVERNMENT WARNING: (1) ACCORDING TO THE SURGEON GENERAL, WOMEN SHOULD NOT DRINK ALCOHOLIC BEVERAGES DURING PREGNANCY BECAUSE OF THE RISK OF BIRTH DEFECTS. (2) CONSUMPTION OF ALCOHOLIC BEVERAGES IMPAIRS YOUR ABILITY TO DRIVE A CAR OR OPERATE MACHINERY, AND MAY CAUSE HEALTH PROBLEMS.",
+    "is_all_caps": true,
+    "is_bold": true,
+    "is_continuous_paragraph": true,
+    "bbox": {"x": 892, "y": 44, "width": 28, "height": 390}
+  },
+  "bboxes": {
+    "brand_name":              {"x": 60,  "y": 80,  "width": 380, "height": 70},
+    "class_or_type":           {"x": 90,  "y": 160, "width": 300, "height": 40},
+    "alcohol_content":         {"x": 30,  "y": 310, "width": 200, "height": 30},
+    "net_contents":            {"x": 30,  "y": 350, "width": 260, "height": 30},
+    "bottler_name_and_address":{"x": 30,  "y": 390, "width": 420, "height": 50},
+    "government_warning":      {"x": 892, "y": 44,  "width": 28,  "height": 390}
+  }
+}
+
+EXAMPLE 2 — Domestic Bourbon (750 mL bottle)
+Label description: Front label shows "EAGLE RESERVE" in large serif type, "Kentucky Straight
+Bourbon Whiskey" below. Back label shows "45% Alc./Vol.", "750 mL",
+"Bottled by Eagle Reserve Distillery, Bardstown, KY 40004",
+"PRODUCT OF U.S.A.", and the government warning in bold all-caps.
+
+{
+  "brand_name": "EAGLE RESERVE",
+  "class_or_type": "Kentucky Straight Bourbon Whiskey",
+  "alcohol_content": "45% Alc./Vol.",
+  "net_contents": "750 mL",
+  "bottler_name_and_address": "Bottled by Eagle Reserve Distillery, Bardstown, KY 40004",
+  "country_of_origin": "PRODUCT OF U.S.A.",
+  "government_warning": {
+    "verbatim_text": "GOVERNMENT WARNING: (1) ACCORDING TO THE SURGEON GENERAL, WOMEN SHOULD NOT DRINK ALCOHOLIC BEVERAGES DURING PREGNANCY BECAUSE OF THE RISK OF BIRTH DEFECTS. (2) CONSUMPTION OF ALCOHOLIC BEVERAGES IMPAIRS YOUR ABILITY TO DRIVE A CAR OR OPERATE MACHINERY, AND MAY CAUSE HEALTH PROBLEMS.",
+    "is_all_caps": true,
+    "is_bold": true,
+    "is_continuous_paragraph": true,
+    "bbox": {"x": 40, "y": 480, "width": 560, "height": 60}
+  },
+  "bboxes": {
+    "brand_name":              {"x": 80,  "y": 60,  "width": 440, "height": 80},
+    "class_or_type":           {"x": 100, "y": 150, "width": 400, "height": 40},
+    "alcohol_content":         {"x": 40,  "y": 400, "width": 180, "height": 30},
+    "net_contents":            {"x": 40,  "y": 435, "width": 120, "height": 30},
+    "bottler_name_and_address":{"x": 40,  "y": 440, "width": 500, "height": 40},
+    "country_of_origin":       {"x": 40,  "y": 465, "width": 240, "height": 24},
+    "government_warning":      {"x": 40,  "y": 480, "width": 560, "height": 60}
+  }
+}
+
+EXAMPLE 3 — Imported Wine (750 mL bottle)
+Label description: Front label "Château Beaumont", "Cabernet Sauvignon", "Product of France".
+Back label shows "13.5% Alc./Vol.", "750 mL",
+"Imported by Allied Imports LLC, New York, NY 10001", and government warning in mixed case.
+
+{
+  "brand_name": "Château Beaumont",
+  "class_or_type": "Cabernet Sauvignon",
+  "alcohol_content": "13.5% Alc./Vol.",
+  "net_contents": "750 mL",
+  "bottler_name_and_address": "Imported by Allied Imports LLC, New York, NY 10001",
+  "country_of_origin": "Product of France",
+  "government_warning": {
+    "verbatim_text": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+    "is_all_caps": false,
+    "is_bold": true,
+    "is_continuous_paragraph": true,
+    "bbox": {"x": 35, "y": 510, "width": 540, "height": 55}
+  },
+  "bboxes": {
+    "brand_name":              {"x": 70,  "y": 55,  "width": 460, "height": 65},
+    "class_or_type":           {"x": 90,  "y": 130, "width": 420, "height": 36},
+    "alcohol_content":         {"x": 35,  "y": 420, "width": 200, "height": 28},
+    "net_contents":            {"x": 35,  "y": 455, "width": 130, "height": 28},
+    "bottler_name_and_address":{"x": 35,  "y": 458, "width": 520, "height": 44},
+    "country_of_origin":       {"x": 35,  "y": 490, "width": 260, "height": 24},
+    "government_warning":      {"x": 35,  "y": 510, "width": 540, "height": 55}
+  }
+}

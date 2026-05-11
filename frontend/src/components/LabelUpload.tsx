@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
-import { fileToBase64 } from '../util'
+import { fileToBase64, fileToDataUrl } from '../util'
 
 interface LabelUploadProps {
-  onFileSelected: (base64: string, fileName: string) => void
+  onFileSelected: (base64: string, dataUrl: string, fileName: string) => void
   currentFileName: string | null
 }
 
@@ -15,8 +15,8 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
   const handleFile = useCallback(
     async (file: File) => {
       try {
-        const base64 = await fileToBase64(file)
-        onFileSelected(base64, file.name)
+        const [base64, dataUrl] = await Promise.all([fileToBase64(file), fileToDataUrl(file)])
+        onFileSelected(base64, dataUrl, file.name)
       } catch {
         // Silently fail — the user can try again
       }

@@ -26,6 +26,7 @@ const DEMO_BADGES = [
 
 export default function App() {
   const [labelBase64, setLabelBase64] = useState<string | null>(null)
+  const [labelDataUrl, setLabelDataUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
   const [application, setApplication] = useState<ApplicationData>(EMPTY_APPLICATION)
   const [result, setResult] = useState<VerificationResult | null>(null)
@@ -58,8 +59,9 @@ export default function App() {
     }
   }
 
-  const handleFileSelected = (base64: string, name: string) => {
+  const handleFileSelected = (base64: string, dataUrl: string, name: string) => {
     setLabelBase64(base64)
+    setLabelDataUrl(dataUrl)
     setFileName(name)
     setResult(null)
     setError(null)
@@ -89,6 +91,7 @@ export default function App() {
 
   const handleReset = () => {
     setLabelBase64(null)
+    setLabelDataUrl(null)
     setFileName(null)
     setApplication(EMPTY_APPLICATION)
     setResult(null)
@@ -147,7 +150,7 @@ export default function App() {
                 New Verification
               </button>
             </div>
-            <ReviewChecklist result={result} />
+            <ReviewChecklist result={result} labelDataUrl={labelDataUrl} />
           </div>
 
         ) : batchResults ? (
