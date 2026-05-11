@@ -9,9 +9,11 @@ agent sees the failure and reviews manually.
 
 import base64
 import binascii
+import io
 import logging
 
 from fastapi import APIRouter, HTTPException
+from PIL import Image
 
 from app import vision
 from app.canonical import CANONICAL_WARNING_TEXT
@@ -32,12 +34,48 @@ router = APIRouter()
 
 _MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
 
+# Anthropic's vision models process images at ≤1568px on the longest side.
+# Normalizing before upload ensures bbox coordinates match crop coordinates.
+_MODEL_MAX_SIDE = 1568
+
 # Magic-byte prefixes for accepted file types.
 _VALID_MAGIC: tuple[bytes, ...] = (
     b"\xff\xd8\xff",        # JPEG
     b"\x89PNG\r\n\x1a\n",   # PNG
     b"%PDF",                 # PDF
 )
+
+
+def _normalize_image(image_bytes: bytes) -> bytes:
+    """Resize image so its longest side is ≤ _MODEL_MAX_SIDE.
+
+    This ensures the bounding-box coordinates Claude returns are in the same
+    pixel space as the bytes passed to crop_region. If the image is already
+    small enough, it is returned unchanged. PDFs are skipped (PIL can't handle
+    them and Claude processes them page-by-page internally).
+    """
+    if image_bytes[:4] == b"%PDF":
+        return image_bytes
+    try:
+        img = Image.open(io.BytesIO(image_bytes))
+        w, h = img.size
+        if max(w, h) <= _MODEL_MAX_SIDE:
+            return image_bytes
+        scale = _MODEL_MAX_SIDE / max(w, h)
+        new_w, new_h = int(w * scale), int(h * scale)
+        img = img.resize((new_w, new_h), Image.LANCZOS)
+        buf = io.BytesIO()
+        # Preserve original format where possible; fall back to JPEG.
+        fmt = img.format or "JPEG"
+        if fmt == "PNG":
+            img.save(buf, format="PNG", optimize=True)
+        else:
+            img = img.convert("RGB")
+            img.save(buf, format="JPEG", quality=90)
+        return buf.getvalue()
+    except Exception:
+        logger.warning("_normalize_image failed; using original bytes", exc_info=True)
+        return image_bytes
 
 
 def _validate_image_bytes(image_bytes: bytes) -> str | None:
@@ -110,6 +148,9 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
     if validation_error:
         logger.warning("image validation failed: %s", validation_error)
         return _manual_review_result(request.application, validation_error)
+
+    # Normalize to ≤1568px so bbox coordinates match crop coordinates.
+    image_bytes = _normalize_image(image_bytes)
 
     try:
         extracted = await vision.extract(image_bytes)

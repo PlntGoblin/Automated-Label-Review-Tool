@@ -105,9 +105,7 @@ async def _call_model(
 
     response = await client.messages.create(
         model=settings.anthropic_model,
-        max_tokens=8192,
-        thinking={"type": "disabled"},
-        output_config={"effort": "low"},
+        max_tokens=1500,
         system=[
             {
                 "type": "text",
