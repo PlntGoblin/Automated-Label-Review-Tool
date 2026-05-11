@@ -1,13 +1,8 @@
 import type { WarningResult } from '../types'
+import { STATUS_CLASS } from '../constants'
 
 interface WarningPanelProps {
   warning: WarningResult
-}
-
-const STATUS_CLASS: Record<string, string> = {
-  PASS: 'status-badge--pass',
-  FLAG: 'status-badge--flag',
-  LOW_CONFIDENCE: 'status-badge--low-confidence',
 }
 
 function boolLabel(value: boolean | null): string {
@@ -20,7 +15,7 @@ export default function WarningPanel({ warning }: WarningPanelProps) {
     <div className="warning-panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
         <h3 style={{ margin: 0 }}>Government Warning</h3>
-        <span className={`status-badge ${STATUS_CLASS[warning.status] ?? ''}`}>
+        <span className={`status-badge ${STATUS_CLASS[warning.status]}`}>
           {warning.status.replace('_', ' ')}
         </span>
       </div>

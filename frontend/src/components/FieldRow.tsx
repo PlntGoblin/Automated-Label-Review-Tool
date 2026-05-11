@@ -1,29 +1,15 @@
 import type { FieldResult } from '../types'
+import { FIELD_LABELS, STATUS_CLASS } from '../constants'
 
 interface FieldRowProps {
   name: string
   result: FieldResult
 }
 
-const STATUS_CLASS: Record<string, string> = {
-  PASS: 'status-badge--pass',
-  FLAG: 'status-badge--flag',
-  LOW_CONFIDENCE: 'status-badge--low-confidence',
-}
-
-const FIELD_LABELS: Record<string, string> = {
-  brand_name: 'Brand Name',
-  class_or_type: 'Class / Type',
-  alcohol_content: 'Alcohol Content',
-  net_contents: 'Net Contents',
-  bottler_name_and_address: 'Bottler Name & Address',
-  country_of_origin: 'Country of Origin',
-}
-
 export default function FieldRow({ name, result }: FieldRowProps) {
   return (
-    <div className="field-row" role="row">
-      <div className="field-row__label" role="rowheader">
+    <li className="field-row">
+      <div className="field-row__label">
         {FIELD_LABELS[name] ?? name}
       </div>
       <div className="field-row__values">
@@ -34,7 +20,7 @@ export default function FieldRow({ name, result }: FieldRowProps) {
         )}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-        <span className={`status-badge ${STATUS_CLASS[result.status] ?? ''}`}>
+        <span className={`status-badge ${STATUS_CLASS[result.status]}`}>
           {result.status.replace('_', ' ')}
         </span>
         {result.region_crop ? (
@@ -47,6 +33,6 @@ export default function FieldRow({ name, result }: FieldRowProps) {
           <div className="field-row__crop-placeholder">No crop</div>
         )}
       </div>
-    </div>
+    </li>
   )
 }

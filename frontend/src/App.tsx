@@ -91,8 +91,8 @@ export default function App() {
             )}
 
             {loading ? (
-              <div className="loading-overlay">
-                <div className="loading-spinner" />
+              <div className="loading-overlay" role="status" aria-live="polite">
+                <div className="loading-spinner" aria-hidden="true" />
                 <p>Analyzing label with AI vision...</p>
               </div>
             ) : (
