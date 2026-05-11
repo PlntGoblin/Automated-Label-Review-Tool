@@ -92,7 +92,7 @@ body {
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
-  color: #71767a;
+  color: #565c65;
   border-radius: 2px;
 }
 
@@ -115,7 +115,7 @@ body {
 }
 .summary-stat__label {
   font-size: 0.75rem;
-  color: #71767a;
+  color: #565c65;
   text-transform: uppercase;
 }
 
@@ -160,7 +160,7 @@ body {
   display: flex;
   gap: 1rem;
   font-size: 0.8125rem;
-  color: #71767a;
+  color: #565c65;
 }
 
 /* Loading spinner */
@@ -170,7 +170,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  color: #71767a;
+  color: #565c65;
 }
 .loading-spinner {
   width: 32px;
@@ -215,7 +215,7 @@ body {
   color: #1b1b1b;
 }
 .demo-card span {
-  color: #71767a;
+  color: #565c65;
   font-size: 0.8125rem;
 }
 
@@ -234,7 +234,7 @@ body {
   font: inherit;
   font-weight: 700;
   font-size: 0.875rem;
-  color: #71767a;
+  color: #565c65;
   cursor: pointer;
   margin-bottom: -2px;
 }

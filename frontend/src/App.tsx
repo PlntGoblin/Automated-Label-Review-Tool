@@ -131,7 +131,7 @@ export default function App() {
           <>
             <section style={{ marginBottom: '2rem' }}>
               <h2 className="usa-heading">Quick Demo</h2>
-              <p style={{ fontSize: '0.875rem', color: '#71767a', marginBottom: '0.75rem' }}>
+              <p style={{ fontSize: '0.875rem', color: '#565c65', marginBottom: '0.75rem' }}>
                 Try a pre-loaded scenario to see how ALRT compares label data against a COLA application.
               </p>
               <div className="demo-cards">
@@ -209,7 +209,7 @@ export default function App() {
               <div role="tabpanel" id="tabpanel-batch" aria-labelledby="tab-batch">
                 <div style={{ marginBottom: '1.5rem' }}>
                   <h3>Upload Labels + CSV</h3>
-                  <p style={{ fontSize: '0.875rem', color: '#71767a', marginBottom: '0.75rem' }}>
+                  <p style={{ fontSize: '0.875rem', color: '#565c65', marginBottom: '0.75rem' }}>
                     Upload multiple label images and a CSV with application data. Filenames in the CSV must match the uploaded image filenames.
                   </p>
                   <BatchUpload onSubmit={handleBatchSubmit} disabled={loading} />

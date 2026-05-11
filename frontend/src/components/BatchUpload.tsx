@@ -217,7 +217,7 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
           ) : (
             <>
               <p><strong>Click to select</strong> a CSV file with application data</p>
-              <p style={{ fontSize: '0.75rem', color: '#71767a' }}>
+              <p style={{ fontSize: '0.75rem', color: '#565c65' }}>
                 Columns: filename, brand_name, class_or_type, alcohol_content, net_contents, bottler_name_and_address, country_of_origin
               </p>
             </>

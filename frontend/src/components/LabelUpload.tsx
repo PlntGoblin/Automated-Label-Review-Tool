@@ -75,7 +75,7 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
       ) : (
         <>
           <p><strong>Drag & drop</strong> a label image here, or <strong>click to browse</strong></p>
-          <p style={{ fontSize: '0.8125rem', color: '#71767a' }}>JPEG, PNG, or PDF (max 10 MB)</p>
+          <p style={{ fontSize: '0.8125rem', color: '#565c65' }}>JPEG, PNG, or PDF (max 10 MB)</p>
         </>
       )}
     </div>
