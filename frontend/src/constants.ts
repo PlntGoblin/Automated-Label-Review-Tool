@@ -23,3 +23,9 @@ export const STATUS_CLASS: Record<FieldStatus, string> = {
   FLAG: 'inline-flex items-center text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider bg-error-container text-on-error-container',
   LOW_CONFIDENCE: 'inline-flex items-center text-[10px] font-bold px-2 py-0.5 uppercase tracking-wider bg-amber-100 text-amber-800',
 }
+
+export const STATUS_COLOR: Record<FieldStatus, string> = {
+  PASS: 'bg-green-100 text-green-800 ring-2 ring-green-700',
+  FLAG: 'bg-error-container text-on-error-container',
+  LOW_CONFIDENCE: 'bg-amber-100 text-amber-800',
+}

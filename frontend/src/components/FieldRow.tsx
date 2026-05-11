@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FieldResult } from '../types'
-import { FIELD_LABELS, STATUS_CLASS } from '../constants'
+import { FIELD_LABELS, STATUS_COLOR } from '../constants'
 
 interface FieldRowProps {
   name: string
@@ -60,8 +60,8 @@ export default function FieldRow({ name, result }: FieldRowProps) {
               <p className="text-label-sm text-error mt-1">{result.note}</p>
             )}
           </div>
-          <div className="pt-2">
-            <span className={STATUS_CLASS[result.status]}>
+          <div className="pt-2 flex justify-end">
+            <span className={`inline-flex items-center text-sm font-black px-4 py-1.5 uppercase tracking-widest ${STATUS_COLOR[result.status]}`}>
               {result.status.replace('_', ' ')}
             </span>
           </div>
