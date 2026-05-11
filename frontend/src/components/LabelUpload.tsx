@@ -43,7 +43,7 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
   )
 
   const zoneClass = [
-    'border-2 border-dashed flex flex-col items-center justify-center gap-3 min-h-[220px] p-margin-lg text-center cursor-pointer select-none transition-colors',
+    'border-2 border-dashed flex flex-col items-center justify-center gap-3 min-h-[320px] p-margin-lg text-center cursor-pointer select-none transition-colors',
     dragActive
       ? 'border-primary bg-primary/5'
       : currentFileName
@@ -73,7 +73,7 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
       />
       {currentFileName ? (
         <>
-          <span className="material-symbols-outlined text-[72px] text-green-500">check_circle</span>
+          <span className="material-symbols-outlined text-green-500" style={{ fontSize: '122px' }}>check_circle</span>
           <p className="text-label-bold text-on-surface">{currentFileName}</p>
           <p className="text-label-sm text-secondary">Click or drop to replace</p>
         </>

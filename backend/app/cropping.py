@@ -33,6 +33,7 @@ def crop_region(
     image_bytes: bytes,
     bbox: BoundingBox | None,
     image_size: tuple[int, int],
+    rotate_cw: int = 0,
 ) -> str | None:
     """Crop a region from the label image and return a base64 data-URL PNG.
 
@@ -83,6 +84,8 @@ def crop_region(
     try:
         img = Image.open(io.BytesIO(image_bytes))
         cropped = img.crop((x1, y1, x2, y2))
+        if rotate_cw:
+            cropped = cropped.rotate(-rotate_cw, expand=True)
         buf = io.BytesIO()
         cropped.save(buf, format="PNG")
         b64 = base64.b64encode(buf.getvalue()).decode("ascii")

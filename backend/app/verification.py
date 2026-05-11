@@ -284,7 +284,7 @@ def compare_net_contents(extracted: str | None, application: str) -> FieldResult
             "FLAG",
             extracted,
             application,
-            f"Could not parse volume from application data: {application!r}",
+            f"Application data is not a valid volume — enter a value like '12 fl oz' or '355 mL', not a percentage.",
         )
 
     # ±1.0 mL tolerance covers fl oz ↔ mL conversion rounding (e.g. 355 mL ≈ 12 fl oz).
@@ -379,8 +379,12 @@ def verify_label(
 
     government_warning = check_government_warning(extracted.government_warning)
     if government_warning.status != "PASS":
+        gov_bbox = extracted.government_warning.bbox
+        # Auto-detect rotation: gov warning printed sideways has a portrait bbox.
+        # Taller than wide = rotated 90° on the label → correct for display.
+        rotate_cw = 90 if (gov_bbox is not None and gov_bbox.height > gov_bbox.width) else 0
         government_warning.region_crop = crop_region(
-            image_bytes, extracted.government_warning.bbox, image_size
+            image_bytes, gov_bbox, image_size, rotate_cw=rotate_cw
         )
 
     pass_count = sum(1 for f in fields.values() if f.status == "PASS")

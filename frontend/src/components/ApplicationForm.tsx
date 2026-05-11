@@ -21,7 +21,7 @@ const PLACEHOLDERS: Record<string, string> = {
 export default function ApplicationForm({ data, onChange, disabled }: ApplicationFormProps) {
   return (
     <fieldset disabled={disabled} className="space-y-3 min-w-0">
-      <legend className="text-label-bold text-secondary uppercase tracking-wider mb-1">
+      <legend className="w-full text-center text-2xl font-extrabold text-primary uppercase tracking-widest mb-4">
         Application Data
       </legend>
       {FIELD_ORDER.map((key) => {
