@@ -69,6 +69,12 @@ export interface VerificationSummary {
   requires_full_manual_review: boolean;
 }
 
+export interface FieldOverride {
+  initials: string;
+  reason: string | null;
+  timestamp: string;
+}
+
 export interface VerificationResult {
   extracted: ExtractedLabel;
   fields: Record<string, FieldResult>;

@@ -1,4 +1,4 @@
-import type { VerificationResult } from '../types'
+import type { FieldOverride, VerificationResult } from '../types'
 import { FIELD_ORDER } from '../constants'
 import FieldRow from './FieldRow'
 import SummaryBar from './SummaryBar'
@@ -7,10 +7,11 @@ import WarningPanel from './WarningPanel'
 interface ReviewChecklistProps {
   result: VerificationResult
   labelDataUrl: string | null
+  overrides: Record<string, FieldOverride>
+  onOverride: (fieldName: string, initials: string, reason: string | null) => void
 }
 
-export default function ReviewChecklist({ result, labelDataUrl }: ReviewChecklistProps) {
-  // Gather all fields + gov warning into a unified list, then sort: non-PASS first
+export default function ReviewChecklist({ result, labelDataUrl, overrides, onOverride }: ReviewChecklistProps) {
   const fieldEntries = FIELD_ORDER.flatMap((name) => {
     const field = result.fields[name]
     return field ? [{ type: 'field' as const, name, field }] : []
@@ -18,10 +19,13 @@ export default function ReviewChecklist({ result, labelDataUrl }: ReviewChecklis
 
   const govWarning = result.government_warning
 
-  // Partition into flagged (FLAG / LOW_CONFIDENCE) and passed
-  const flagged = fieldEntries.filter((e) => e.field.status !== 'PASS')
-  const passed  = fieldEntries.filter((e) => e.field.status === 'PASS')
-  const govIsFlagged = govWarning.status !== 'PASS'
+  // A field is "effectively passed" if it passed OR has been overridden
+  const isEffectivePass = (name: string, status: string) =>
+    status === 'PASS' || !!overrides[name]
+
+  const flagged = fieldEntries.filter((e) => !isEffectivePass(e.name, e.field.status))
+  const passed  = fieldEntries.filter((e) => isEffectivePass(e.name, e.field.status))
+  const govIsFlagged = !isEffectivePass('government_warning', govWarning.status)
 
   return (
     <section aria-label="Verification results" className="space-y-margin-md">
@@ -45,13 +49,15 @@ export default function ReviewChecklist({ result, labelDataUrl }: ReviewChecklis
             {/* Flagged fields */}
             {flagged.map(({ name, field }) => (
               <div key={name} role="listitem">
-                <FieldRow name={name} result={field} />
+                <FieldRow name={name} result={field} override={overrides[name]} onOverride={(i, r) => onOverride(name, i, r)} />
               </div>
             ))}
-            {govIsFlagged && <WarningPanel warning={govWarning} compact />}
+            {govIsFlagged && (
+              <WarningPanel warning={govWarning} compact override={overrides['government_warning']} onOverride={(i, r) => onOverride('government_warning', i, r)} />
+            )}
 
-            {/* Divider between flagged and passed */}
-            {(flagged.length > 0 || govIsFlagged) && passed.length > 0 && (
+            {/* Divider */}
+            {(flagged.length > 0 || govIsFlagged) && (passed.length > 0 || !govIsFlagged) && (
               <div className="flex items-center gap-2 py-1">
                 <div className="flex-1 border-t border-outline-variant" />
                 <span className="text-xs text-secondary uppercase tracking-wider">Passed</span>
@@ -62,10 +68,12 @@ export default function ReviewChecklist({ result, labelDataUrl }: ReviewChecklis
             {/* Passed fields */}
             {passed.map(({ name, field }) => (
               <div key={name} role="listitem">
-                <FieldRow name={name} result={field} />
+                <FieldRow name={name} result={field} override={overrides[name]} onOverride={(i, r) => onOverride(name, i, r)} />
               </div>
             ))}
-            {!govIsFlagged && <WarningPanel warning={govWarning} compact />}
+            {!govIsFlagged && (
+              <WarningPanel warning={govWarning} compact override={overrides['government_warning']} onOverride={(i, r) => onOverride('government_warning', i, r)} />
+            )}
           </div>
 
           {/* Right col: full label image */}

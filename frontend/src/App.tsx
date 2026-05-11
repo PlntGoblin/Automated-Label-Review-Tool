@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ApplicationData, VerificationResult, VerifyRequest } from './types'
+import type { ApplicationData, FieldOverride, VerificationResult, VerifyRequest } from './types'
 import { verifyLabel, verifyBatch } from './api'
 import { DEMO_SCENARIOS } from './demo-scenarios'
 import ApplicationForm from './components/ApplicationForm'
@@ -35,6 +35,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [batchResults, setBatchResults] = useState<VerificationResult[] | null>(null)
   const [batchFileNames, setBatchFileNames] = useState<string[]>([])
+  const [overrides, setOverrides] = useState<Record<string, FieldOverride>>({})
   const [activeTab, setActiveTab] = useState<'single' | 'batch'>('single')
 
   const canSubmit =
@@ -89,6 +90,13 @@ export default function App() {
     }
   }
 
+  const handleOverride = (fieldName: string, initials: string, reason: string | null) => {
+    setOverrides((prev) => ({
+      ...prev,
+      [fieldName]: { initials, reason, timestamp: new Date().toISOString() },
+    }))
+  }
+
   const handleReset = () => {
     setLabelBase64(null)
     setLabelDataUrl(null)
@@ -99,6 +107,7 @@ export default function App() {
     setError(null)
     setBatchResults(null)
     setBatchFileNames([])
+    setOverrides({})
   }
 
   return (
@@ -150,7 +159,7 @@ export default function App() {
                 New Verification
               </button>
             </div>
-            <ReviewChecklist result={result} labelDataUrl={labelDataUrl} />
+            <ReviewChecklist result={result} labelDataUrl={labelDataUrl} overrides={overrides} onOverride={handleOverride} />
           </div>
 
         ) : batchResults ? (
