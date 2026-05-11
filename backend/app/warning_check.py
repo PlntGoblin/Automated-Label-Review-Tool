@@ -48,7 +48,8 @@ def check_government_warning(extracted: WarningExtraction) -> WarningResult:
     canonical_norm = normalize_for_warning(CANONICAL_WARNING_TEXT)
     extracted_norm = normalize_for_warning(extracted.verbatim_text)
 
-    if extracted_norm == canonical_norm:
+    # Case-insensitive exact match — all-caps labels are legally equivalent to mixed-case.
+    if extracted_norm.lower() == canonical_norm.lower():
         status: FieldStatus = "PASS"
         note = None
     else:
