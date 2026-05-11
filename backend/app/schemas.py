@@ -80,6 +80,7 @@ class WarningResult(BaseModel):
     is_bold: bool | None
     is_continuous_paragraph: bool | None
     region_crop: str | None
+    note: str | None = None
 
 
 class VerificationSummary(BaseModel):

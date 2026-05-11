@@ -31,6 +31,9 @@ export default function WarningPanel({ warning, compact = false }: WarningPanelP
             <span className="text-label-sm text-secondary">Bold: {boolLabel(warning.is_bold)}</span>
             <span className="text-label-sm text-secondary">Continuous: {boolLabel(warning.is_continuous_paragraph)}</span>
           </div>
+          {warning.note && (
+            <p className="text-label-sm text-error mt-1">{warning.note}</p>
+          )}
         </div>
       </div>
     )

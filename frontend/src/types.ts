@@ -59,6 +59,7 @@ export interface WarningResult {
   is_bold: boolean | null;
   is_continuous_paragraph: boolean | null;
   region_crop: string | null;
+  note: string | null;
 }
 
 export interface VerificationSummary {

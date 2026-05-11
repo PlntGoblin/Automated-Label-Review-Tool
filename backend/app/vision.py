@@ -178,6 +178,48 @@ async def _call_with_retry(
         raise VisionAPIError(f"Non-retryable model error: {fatal}") from fatal
 
 
+async def extract_warning_text(image_bytes: bytes) -> str | None:
+    """Targeted extraction of just the government warning text from a pre-cropped image.
+
+    Used as a fallback when the main extraction produces a low-quality warning read
+    (e.g. rotated label). Returns the verbatim text string, or None on failure.
+    """
+    if not settings.anthropic_api_key:
+        return None
+    try:
+        media_type = _detect_media_type(image_bytes)
+        image_b64 = base64.standard_b64encode(image_bytes).decode("ascii")
+        client = _get_client()
+        response = await client.messages.create(
+            model=settings.anthropic_model,
+            max_tokens=400,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image" if media_type != "application/pdf" else "document",
+                            "source": {"type": "base64", "media_type": media_type, "data": image_b64},
+                        },
+                        {
+                            "type": "text",
+                            "text": (
+                                "Read the government warning text in this image exactly as printed. "
+                                "Return only the verbatim text, nothing else. "
+                                "If the text is unreadable, return the single word: UNREADABLE"
+                            ),
+                        },
+                    ],
+                }
+            ],
+        )
+        text = _first_text_block(response).strip()
+        return None if text == "UNREADABLE" else text
+    except Exception:
+        logger.warning("extract_warning_text failed", exc_info=True)
+        return None
+
+
 async def extract(image_bytes: bytes) -> ExtractedLabel:
     """Run Blind Extraction on the label image and return a validated ExtractedLabel.
 

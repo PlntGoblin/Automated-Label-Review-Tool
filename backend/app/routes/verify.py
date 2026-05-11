@@ -174,6 +174,43 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
 
     verification_started = time.perf_counter()
     result = verify_label(extracted, request.application, image_bytes)
+
+    # If the government warning is not PASS and its bbox is portrait (height > width),
+    # the warning is likely printed sideways. Crop, rotate 90° CW, and re-read it.
+    gov_bbox = extracted.government_warning.bbox
+    if result.government_warning.status != "PASS" and gov_bbox is not None and gov_bbox.height > gov_bbox.width:
+        logger.info("gov warning rotated bbox detected — attempting targeted re-extraction")
+        try:
+            img = Image.open(io.BytesIO(image_bytes))
+            img_w, img_h = img.size
+            x1 = max(gov_bbox.x, 0)
+            y1 = max(gov_bbox.y, 0)
+            x2 = min(gov_bbox.x + gov_bbox.width, img_w)
+            y2 = min(gov_bbox.y + gov_bbox.height, img_h)
+            cropped = img.crop((x1, y1, x2, y2)).rotate(-90, expand=True)
+            buf = io.BytesIO()
+            cropped.save(buf, format="PNG")
+            reread_text = await vision.extract_warning_text(buf.getvalue())
+            if reread_text:
+                from app.schemas import WarningExtraction
+                from app.warning_check import check_government_warning
+                reread_extraction = WarningExtraction(
+                    verbatim_text=reread_text,
+                    is_all_caps=extracted.government_warning.is_all_caps,
+                    is_bold=extracted.government_warning.is_bold,
+                    is_continuous_paragraph=extracted.government_warning.is_continuous_paragraph,
+                    bbox=gov_bbox,
+                )
+                reread_result = check_government_warning(reread_extraction)
+                # Only upgrade — never downgrade a result with the re-read
+                status_rank = {"PASS": 0, "LOW_CONFIDENCE": 1, "FLAG": 2}
+                if status_rank[reread_result.status] < status_rank[result.government_warning.status]:
+                    reread_result.region_crop = result.government_warning.region_crop
+                    result.government_warning = reread_result
+                    logger.info("gov warning re-extraction improved status to %s", reread_result.status)
+        except Exception:
+            logger.warning("gov warning re-extraction failed", exc_info=True)
+
     verification_ms = (time.perf_counter() - verification_started) * 1000
     total_ms = (time.perf_counter() - started) * 1000
     logger.info(
