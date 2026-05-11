@@ -171,3 +171,130 @@ Back label shows "13.5% Alc./Vol.", "750 mL",
     "government_warning":      {"x": 35,  "y": 510, "width": 540, "height": 55}
   }
 }
+
+EXAMPLE 4 — Distilled Spirit with Proof Statement (750 mL bottle)
+Label description: "FRONTIER VODKA", "Vodka", front label. Back label has "80 PROOF",
+"1 LITER", "Distilled and Bottled by Frontier Spirits Co., Pueblo, CO 81003",
+"PRODUCT OF U.S.A.", and the government warning in bold all-caps.
+Key behavior: alcohol_content must be extracted as "80 PROOF" — do NOT convert to 40% ABV.
+
+{
+  "brand_name": "FRONTIER VODKA",
+  "class_or_type": "Vodka",
+  "alcohol_content": "80 PROOF",
+  "net_contents": "1 LITER",
+  "bottler_name_and_address": "Distilled and Bottled by Frontier Spirits Co., Pueblo, CO 81003",
+  "country_of_origin": "PRODUCT OF U.S.A.",
+  "government_warning": {
+    "verbatim_text": "GOVERNMENT WARNING: (1) ACCORDING TO THE SURGEON GENERAL, WOMEN SHOULD NOT DRINK ALCOHOLIC BEVERAGES DURING PREGNANCY BECAUSE OF THE RISK OF BIRTH DEFECTS. (2) CONSUMPTION OF ALCOHOLIC BEVERAGES IMPAIRS YOUR ABILITY TO DRIVE A CAR OR OPERATE MACHINERY, AND MAY CAUSE HEALTH PROBLEMS.",
+    "is_all_caps": true,
+    "is_bold": true,
+    "is_continuous_paragraph": true,
+    "bbox": {"x": 38, "y": 495, "width": 545, "height": 58}
+  },
+  "bboxes": {
+    "brand_name":              {"x": 75,  "y": 60,  "width": 450, "height": 70},
+    "class_or_type":           {"x": 95,  "y": 140, "width": 410, "height": 38},
+    "alcohol_content":         {"x": 38,  "y": 410, "width": 160, "height": 30},
+    "net_contents":            {"x": 38,  "y": 445, "width": 140, "height": 30},
+    "bottler_name_and_address":{"x": 38,  "y": 450, "width": 524, "height": 44},
+    "country_of_origin":       {"x": 38,  "y": 478, "width": 250, "height": 24},
+    "government_warning":      {"x": 38,  "y": 495, "width": 545, "height": 58}
+  }
+}
+
+EXAMPLE 5 — Government Warning Printed Sideways (12 oz can)
+Label description: "MESA GOLD LAGER", "American Lager", front panel. Side panel printed
+vertically (rotated 90° clockwise) contains the government warning in small all-caps bold text
+running bottom-to-top. The bbox for government_warning will have height >> width because
+the text block is taller than it is wide in the original image orientation.
+Key behavior: extract the full verbatim text even though it appears rotated. Return the bbox
+in original image coordinates — do not adjust for rotation.
+
+{
+  "brand_name": "MESA GOLD LAGER",
+  "class_or_type": "American Lager",
+  "alcohol_content": "4.8% ALC./VOL.",
+  "net_contents": "12 FL OZ (355 mL)",
+  "bottler_name_and_address": "BREWED AND CANNED BY MESA BREWING CO., PHOENIX, AZ 85001",
+  "country_of_origin": null,
+  "government_warning": {
+    "verbatim_text": "GOVERNMENT WARNING: (1) ACCORDING TO THE SURGEON GENERAL, WOMEN SHOULD NOT DRINK ALCOHOLIC BEVERAGES DURING PREGNANCY BECAUSE OF THE RISK OF BIRTH DEFECTS. (2) CONSUMPTION OF ALCOHOLIC BEVERAGES IMPAIRS YOUR ABILITY TO DRIVE A CAR OR OPERATE MACHINERY, AND MAY CAUSE HEALTH PROBLEMS.",
+    "is_all_caps": true,
+    "is_bold": true,
+    "is_continuous_paragraph": true,
+    "bbox": {"x": 905, "y": 38, "width": 24, "height": 408}
+  },
+  "bboxes": {
+    "brand_name":              {"x": 55,  "y": 75,  "width": 390, "height": 68},
+    "class_or_type":           {"x": 80,  "y": 155, "width": 340, "height": 38},
+    "alcohol_content":         {"x": 28,  "y": 318, "width": 195, "height": 28},
+    "net_contents":            {"x": 28,  "y": 352, "width": 255, "height": 28},
+    "bottler_name_and_address":{"x": 28,  "y": 386, "width": 430, "height": 46},
+    "government_warning":      {"x": 905, "y": 38,  "width": 24,  "height": 408}
+  }
+}
+
+EXAMPLE 6 — Label with Missing Optional Fields (null handling)
+Label description: "SIERRA RUM", "Puerto Rican Rum", front label. Back label has
+"40% Alc./Vol.", "750 mL", "Imported by Continental Spirits Inc., Miami, FL 33101".
+No country of origin statement is printed anywhere on the label.
+Key behavior: country_of_origin must be null — do NOT infer it from the bottler address or
+importer city. Never guess. Only return what is physically printed.
+
+{
+  "brand_name": "SIERRA RUM",
+  "class_or_type": "Puerto Rican Rum",
+  "alcohol_content": "40% Alc./Vol.",
+  "net_contents": "750 mL",
+  "bottler_name_and_address": "Imported by Continental Spirits Inc., Miami, FL 33101",
+  "country_of_origin": null,
+  "government_warning": {
+    "verbatim_text": "GOVERNMENT WARNING: (1) ACCORDING TO THE SURGEON GENERAL, WOMEN SHOULD NOT DRINK ALCOHOLIC BEVERAGES DURING PREGNANCY BECAUSE OF THE RISK OF BIRTH DEFECTS. (2) CONSUMPTION OF ALCOHOLIC BEVERAGES IMPAIRS YOUR ABILITY TO DRIVE A CAR OR OPERATE MACHINERY, AND MAY CAUSE HEALTH PROBLEMS.",
+    "is_all_caps": true,
+    "is_bold": false,
+    "is_continuous_paragraph": true,
+    "bbox": {"x": 32, "y": 502, "width": 548, "height": 54}
+  },
+  "bboxes": {
+    "brand_name":              {"x": 65,  "y": 58,  "width": 470, "height": 72},
+    "class_or_type":           {"x": 88,  "y": 142, "width": 424, "height": 38},
+    "alcohol_content":         {"x": 32,  "y": 415, "width": 188, "height": 28},
+    "net_contents":            {"x": 32,  "y": 448, "width": 125, "height": 28},
+    "bottler_name_and_address":{"x": 32,  "y": 452, "width": 528, "height": 44},
+    "government_warning":      {"x": 32,  "y": 502, "width": 548, "height": 54}
+  }
+}
+
+EXAMPLE 7 — Dual-Language Label (English / Spanish)
+Label description: "DOS CAMINOS TEQUILA" / "TEQUILA DOS CAMINOS", "Tequila Blanco" /
+"Tequila Blanco". Back label bilingual: "40% Alc./Vol. (80 Proof)", "750 mL",
+"Imported by Southwest Imports LLC, San Antonio, TX 78201 / Importado por Southwest Imports LLC",
+"PRODUCT OF MEXICO / PRODUCTO DE MEXICO", government warning in English only.
+Key behavior: extract the English text for all fields. When both languages appear for the same
+field, return only the English value. Do not merge or concatenate both languages.
+
+{
+  "brand_name": "DOS CAMINOS TEQUILA",
+  "class_or_type": "Tequila Blanco",
+  "alcohol_content": "40% Alc./Vol. (80 Proof)",
+  "net_contents": "750 mL",
+  "bottler_name_and_address": "Imported by Southwest Imports LLC, San Antonio, TX 78201",
+  "country_of_origin": "PRODUCT OF MEXICO",
+  "government_warning": {
+    "verbatim_text": "GOVERNMENT WARNING: (1) ACCORDING TO THE SURGEON GENERAL, WOMEN SHOULD NOT DRINK ALCOHOLIC BEVERAGES DURING PREGNANCY BECAUSE OF THE RISK OF BIRTH DEFECTS. (2) CONSUMPTION OF ALCOHOLIC BEVERAGES IMPAIRS YOUR ABILITY TO DRIVE A CAR OR OPERATE MACHINERY, AND MAY CAUSE HEALTH PROBLEMS.",
+    "is_all_caps": true,
+    "is_bold": true,
+    "is_continuous_paragraph": false,
+    "bbox": {"x": 30, "y": 508, "width": 552, "height": 70}
+  },
+  "bboxes": {
+    "brand_name":              {"x": 62,  "y": 52,  "width": 476, "height": 74},
+    "class_or_type":           {"x": 85,  "y": 138, "width": 430, "height": 40},
+    "alcohol_content":         {"x": 30,  "y": 408, "width": 280, "height": 30},
+    "net_contents":            {"x": 30,  "y": 442, "width": 128, "height": 30},
+    "bottler_name_and_address":{"x": 30,  "y": 446, "width": 532, "height": 52},
+    "country_of_origin":       {"x": 30,  "y": 490, "width": 310, "height": 24},
+    "government_warning":      {"x": 30,  "y": 508, "width": 552, "height": 70}
+  }
+}
