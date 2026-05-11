@@ -7,6 +7,7 @@ import LabelUpload from './components/LabelUpload'
 import ReviewChecklist from './components/ReviewChecklist'
 import BatchUpload from './components/BatchUpload'
 import BatchResults from './components/BatchResults'
+import AnalysisProgress from './components/AnalysisProgress'
 
 const EMPTY_APPLICATION: ApplicationData = {
   brand_name: '',
@@ -247,12 +248,7 @@ export default function App() {
 
               {/* Loading */}
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-4" role="status" aria-live="polite">
-                  <div className="w-10 h-10 border-4 border-outline-variant border-t-primary rounded-full animate-spin" aria-hidden="true" />
-                  <p className="text-label-bold text-secondary uppercase tracking-wider">
-                    {activeTab === 'batch' ? 'Analyzing batch with AI vision…' : 'Analyzing label with AI vision…'}
-                  </p>
-                </div>
+                <AnalysisProgress mode={activeTab} />
 
               ) : activeTab === 'single' ? (
                 <div

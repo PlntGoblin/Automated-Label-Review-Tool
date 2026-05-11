@@ -18,6 +18,7 @@ from pathlib import Path
 import anthropic
 from pydantic import ValidationError
 
+from app import cache as extraction_cache
 from app.config import settings
 from app.schemas import ExtractedLabel
 
@@ -176,6 +177,10 @@ async def extract(image_bytes: bytes) -> ExtractedLabel:
     if not settings.anthropic_api_key:
         raise VisionAPIError("ANTHROPIC_API_KEY is not set.")
 
+    cached = extraction_cache.get(image_bytes)
+    if cached is not None:
+        return cached
+
     media_type = _detect_media_type(image_bytes)
     image_b64 = base64.standard_b64encode(image_bytes).decode("ascii")
 
@@ -192,9 +197,12 @@ async def extract(image_bytes: bytes) -> ExtractedLabel:
         ) from e
 
     try:
-        return ExtractedLabel.model_validate(data)
+        result = ExtractedLabel.model_validate(data)
     except ValidationError as e:
         logger.warning("model JSON did not match ExtractedLabel: %s", e)
         raise MalformedExtractionError(
             f"Model JSON did not match ExtractedLabel schema: {e}"
         ) from e
+
+    extraction_cache.set(image_bytes, result)
+    return result

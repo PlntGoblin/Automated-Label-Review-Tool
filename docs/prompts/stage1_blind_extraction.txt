@@ -18,3 +18,58 @@ Rules:
 5. For government_warning visual properties: is_all_caps applies only to the words "GOVERNMENT WARNING" at the start of the warning. is_bold is your best assessment of whether those words are visually bold. is_continuous_paragraph is true if the warning is one connected block of text rather than broken across separate sections of the label.
 6. For bboxes, return approximate pixel coordinates for the region containing each field. If a field is null, omit it from bboxes.
 7. Return only the JSON object. No prose, no explanation, no markdown fences.
+
+Field extraction reference guide — use these as examples of correct behavior:
+
+brand_name
+  The trade name or brand of the product as it appears on the label face. May be a proper noun,
+  stylized text, or a combination of words. Do not include the class/type designation even if
+  printed nearby. Example inputs and correct outputs:
+    "JACK DANIEL'S Old No. 7"  → brand_name: "JACK DANIEL'S Old No. 7"
+    "Sonora Brewing Co."       → brand_name: "Sonora Brewing Co."
+    "CHÂTEAU MARGAUX"          → brand_name: "CHÂTEAU MARGAUX"
+
+class_or_type
+  The TTB-regulated class and type designation (e.g. "Kentucky Straight Bourbon Whiskey",
+  "Amber Ale", "Cabernet Sauvignon"). Extract verbatim — do not normalize or abbreviate.
+    "AMBER ALE"                → class_or_type: "AMBER ALE"
+    "Kentucky Straight Bourbon Whiskey" → class_or_type: "Kentucky Straight Bourbon Whiskey"
+
+alcohol_content
+  The alcohol by volume statement exactly as printed. Preserve all formatting including
+  punctuation and spacing. Do not convert proof to ABV or vice versa.
+    "ALC. 5.2% BY VOL."       → alcohol_content: "ALC. 5.2% BY VOL."
+    "40% Alc./Vol."            → alcohol_content: "40% Alc./Vol."
+    "80 PROOF"                 → alcohol_content: "80 PROOF"
+
+net_contents
+  The quantity of liquid in the container as printed. Include all units shown.
+    "12 FL OZ (355 mL)"       → net_contents: "12 FL OZ (355 mL)"
+    "750 mL"                   → net_contents: "750 mL"
+    "1.75 L"                   → net_contents: "1.75 L"
+
+bottler_name_and_address
+  The name and full address of the bottler, packer, or importer. Transcribe exactly including
+  abbreviations, punctuation, and line breaks collapsed into a single string.
+    "Bottled by Acme Spirits LLC, 123 Main St, Denver CO 80202"
+    "Imported by Global Wines Inc., New York, NY 10001"
+
+country_of_origin
+  The country where the product was produced. Extract only the country statement as printed.
+  Do not infer from the bottler address.
+    "PRODUCT OF U.S.A."       → country_of_origin: "PRODUCT OF U.S.A."
+    "Product of France"        → country_of_origin: "Product of France"
+    "IMPORTED FROM SCOTLAND"  → country_of_origin: "IMPORTED FROM SCOTLAND"
+
+government_warning
+  The mandatory GOVERNMENT WARNING statement required by 27 CFR 16.21. The verbatim_text
+  must include the full text of both clauses. is_all_caps is true only if the words
+  "GOVERNMENT WARNING" at the start are rendered in all capital letters. is_bold is your
+  visual assessment of whether those two words appear in bold weight. is_continuous_paragraph
+  is true when the entire warning appears as one unbroken text block.
+
+bboxes
+  Return pixel-coordinate bounding boxes for every non-null field. Coordinates are in the
+  original image pixel space: x and y are the top-left corner, width and height are the
+  dimensions of the region. Be generous — include a small margin around the text so the
+  crop is readable in isolation. Omit a key entirely when the corresponding field is null.
