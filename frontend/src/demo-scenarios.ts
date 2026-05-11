@@ -17,7 +17,7 @@ const CROPS = {
   class_or_type:            '/crops/class_or_type.png',
   alcohol_content:          '/crops/alcohol_content.png',
   net_contents:             '/crops/net_contents.png',
-  bottler_name_and_address: '/crops/country_of_origin.png',
+  bottler_name_and_address: '/crops/bottler_name_and_address.png',
   country_of_origin:        '/crops/country_of_origin.png',
   government_warning:       '/crops/gov_warning.png',
 }
