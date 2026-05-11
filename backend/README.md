@@ -2,7 +2,7 @@
 
 FastAPI service for the Automated Label Review Tool. Two-stage **Blind Extraction**: the vision model extracts the label image only; deterministic Python compares the extraction against the application data. The service flags; the agent decides.
 
-See the [top-level README](../README.md) for project context and the [PRD](../PRD.md) for the full build specification.
+See the [top-level README](../README.md) for project context and the [build specification](../docs/PRD.md) for detailed architecture decisions.
 
 ## Requirements
 
@@ -65,18 +65,18 @@ All configuration is loaded from environment variables (see `.env.example`):
 
 ```
 app/
-  main.py              # FastAPI entry, CORS, route mounting
+  main.py              # FastAPI entry, CORS, route mounting, static file serving
   config.py            # Pydantic Settings loaded from env
   schemas.py           # All Pydantic v2 schemas (the API contract)
-  vision.py            # Stage 1: Blind Extraction client            (Phase 2)
-  verification.py      # Stage 2: deterministic field comparison     (Phase 3)
-  warning_check.py     # Government Warning checks                   (Phase 3)
-  cropping.py          # Image cropping + base64 encoding            (Phase 4)
-  canonical.py         # 27 CFR § 16.21 canonical warning text       (Phase 3)
+  vision.py            # Stage 1: Blind Extraction client
+  verification.py      # Stage 2: deterministic field comparison
+  warning_check.py     # Government Warning checks
+  cropping.py          # Image cropping + base64 encoding
+  canonical.py         # 27 CFR § 16.21 canonical warning text
   routes/
     verify.py          # POST /api/verify
     batch.py           # POST /api/verify/batch
-tests/                 # pytest unit + contract tests
+tests/                 # 133 pytest tests
 ```
 
 ## Architectural notes
