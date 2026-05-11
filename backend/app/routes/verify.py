@@ -11,7 +11,7 @@ import base64
 import binascii
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app import vision
 from app.canonical import CANONICAL_WARNING_TEXT
@@ -29,6 +29,24 @@ from app.vision import MalformedExtractionError, VisionAPIError
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+_MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
+
+# Magic-byte prefixes for accepted file types.
+_VALID_MAGIC: tuple[bytes, ...] = (
+    b"\xff\xd8\xff",        # JPEG
+    b"\x89PNG\r\n\x1a\n",   # PNG
+    b"%PDF",                 # PDF
+)
+
+
+def _validate_image_bytes(image_bytes: bytes) -> str | None:
+    """Return an error message if file fails size/type checks, or None if OK."""
+    if len(image_bytes) > _MAX_IMAGE_BYTES:
+        return f"Image exceeds 10 MB limit ({len(image_bytes):,} bytes)."
+    if not any(image_bytes.startswith(magic) for magic in _VALID_MAGIC):
+        return "Unsupported file type. Accepted: JPEG, PNG, PDF."
+    return None
 
 
 def _empty_extraction() -> ExtractedLabel:
@@ -88,6 +106,11 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
             request.application, f"Invalid base64 image: {e}"
         )
 
+    validation_error = _validate_image_bytes(image_bytes)
+    if validation_error:
+        logger.warning("image validation failed: %s", validation_error)
+        return _manual_review_result(request.application, validation_error)
+
     try:
         extracted = await vision.extract(image_bytes)
     except MalformedExtractionError as e:
@@ -107,4 +130,13 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
 @router.post("/verify", response_model=VerificationResult)
 async def verify(request: VerifyRequest) -> VerificationResult:
     """Verify a single label image against its application data."""
+    # Single endpoint: reject clearly invalid input with 422 before processing.
+    try:
+        raw = base64.b64decode(request.label_image, validate=True)
+    except binascii.Error:
+        pass  # run_single_verification handles base64 failures as manual_review
+    else:
+        error = _validate_image_bytes(raw)
+        if error:
+            raise HTTPException(status_code=422, detail=error)
     return await run_single_verification(request)

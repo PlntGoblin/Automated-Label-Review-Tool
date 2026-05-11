@@ -20,7 +20,7 @@ router = APIRouter()
 
 @router.post("/verify/batch", response_model=list[VerificationResult])
 async def verify_batch(requests: list[VerifyRequest]) -> list[VerificationResult]:
-    """Verify a batch of labels concurrently. Returns one result per input, in order."""
+    """Verify a batch of labels concurrently, bounded by MAX_CONCURRENT_REQUESTS."""
     if len(requests) > settings.max_batch_size:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -29,6 +29,10 @@ async def verify_batch(requests: list[VerifyRequest]) -> list[VerificationResult
             ),
         )
     logger.info("batch request received: %d items", len(requests))
-    return await asyncio.gather(
-        *(run_single_verification(r) for r in requests)
-    )
+    semaphore = asyncio.Semaphore(settings.max_concurrent_requests)
+
+    async def _bounded(r: VerifyRequest) -> VerificationResult:
+        async with semaphore:
+            return await run_single_verification(r)
+
+    return await asyncio.gather(*(_bounded(r) for r in requests))

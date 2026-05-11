@@ -1,15 +1,19 @@
-"""Contract tests for the API surface and the Stage 1 prompt.
+"""Contract tests for the API surface, the Stage 1 prompt, and operational hardening.
 
-Phase 2 wires real vision extraction in. The vision module is mocked in
-tests — per PRD §8, tests must not hit the live Anthropic API. Each test
-that exercises the verify pipeline applies its own monkeypatch on
-`app.vision.extract`.
+The vision module is mocked in tests — per PRD §8, tests must not hit the
+live Anthropic API. Each test that exercises the verify pipeline applies its
+own monkeypatch on `app.vision.extract` or `app.vision._call_model`.
 """
 
+import asyncio
+import base64
+import json
 import re
 from pathlib import Path
 from typing import get_args
 
+import anthropic
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -29,8 +33,12 @@ VALID_APPLICATION = {
     "country_of_origin": "USA",
 }
 
+# Valid JPEG: magic bytes + padding. Used for all tests that need to pass validation.
+_JPEG_BYTES = b"\xff\xd8\xff\xe0" + b"\x00" * 100
+_JPEG_B64 = base64.b64encode(_JPEG_BYTES).decode()
+
 VALID_REQUEST = {
-    "label_image": "Zm9v",
+    "label_image": _JPEG_B64,
     "application": VALID_APPLICATION,
 }
 
@@ -198,3 +206,149 @@ def test_stage1_prompt_does_not_leak_expected_values() -> None:
     )
     matches = forbidden.findall(text)
     assert not matches, f"Prompt leaks expected values or success criteria: {matches}"
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Input validation
+# ---------------------------------------------------------------------------
+
+def test_verify_rejects_oversized_file() -> None:
+    """A file exceeding 10 MB returns 422."""
+    huge = b"\xff\xd8\xff" + b"\x00" * (10 * 1024 * 1024 + 1)
+    response = client.post(
+        "/api/verify",
+        json={
+            "label_image": base64.b64encode(huge).decode(),
+            "application": VALID_APPLICATION,
+        },
+    )
+    assert response.status_code == 422
+    assert "10 MB" in response.json()["detail"]
+
+
+def test_verify_rejects_unsupported_file_type() -> None:
+    """A GIF file (not in the JPEG/PNG/PDF whitelist) returns 422."""
+    gif_bytes = b"GIF89a" + b"\x00" * 100
+    response = client.post(
+        "/api/verify",
+        json={
+            "label_image": base64.b64encode(gif_bytes).decode(),
+            "application": VALID_APPLICATION,
+        },
+    )
+    assert response.status_code == 422
+    assert "Unsupported file type" in response.json()["detail"]
+
+
+def test_batch_invalid_file_returns_manual_review_not_422(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """In a batch, a bad file produces per-item manual_review, not a batch-wide 422."""
+    gif_bytes = b"GIF89a" + b"\x00" * 100
+    response = client.post(
+        "/api/verify/batch",
+        json=[
+            {
+                "label_image": base64.b64encode(gif_bytes).decode(),
+                "application": VALID_APPLICATION,
+            }
+        ],
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["manual_review_required"] is True
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 — Retry mechanism
+# ---------------------------------------------------------------------------
+
+_FAKE_EXTRACTION_JSON = json.dumps(
+    {
+        "brand_name": "Old Tom Distillery",
+        "class_or_type": "Kentucky Straight Bourbon Whiskey",
+        "alcohol_content": "45% Alc./Vol.",
+        "net_contents": "750 mL",
+        "bottler_name_and_address": "Old Tom Distillery, Louisville KY",
+        "country_of_origin": "USA",
+        "government_warning": {
+            "verbatim_text": _CANONICAL_WARNING_FOR_TESTS,
+            "is_all_caps": True,
+            "is_bold": True,
+            "is_continuous_paragraph": True,
+            "bbox": None,
+        },
+        "bboxes": {},
+    }
+)
+
+
+def _dummy_request() -> httpx.Request:
+    return httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+
+
+def _mock_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Set a fake API key so vision.extract doesn't bail before calling the model."""
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "anthropic_api_key", "sk-test-fake-key")
+
+
+def test_retry_succeeds_after_one_transient_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One transient failure followed by a success returns a valid result."""
+    _mock_api_key(monkeypatch)
+    calls: list[int] = []
+
+    async def mock_call_model(_client, _media_type, _image_b64):
+        calls.append(1)
+        if len(calls) == 1:
+            raise anthropic.APIConnectionError(request=_dummy_request())
+        return _FAKE_EXTRACTION_JSON
+
+    monkeypatch.setattr(vision_module, "_call_model", mock_call_model)
+
+    async def instant_sleep(_seconds):
+        pass
+
+    monkeypatch.setattr(asyncio, "sleep", instant_sleep)
+
+    response = client.post(
+        "/api/verify",
+        json={"label_image": _JPEG_B64, "application": VALID_APPLICATION},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["manual_review_required"] is False
+    assert len(calls) == 2  # called once, failed, retried, succeeded
+
+
+def test_retry_exhausted_returns_manual_review(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Two consecutive transient failures result in manual_review_required."""
+    _mock_api_key(monkeypatch)
+    calls: list[int] = []
+
+    async def mock_call_model(_client, _media_type, _image_b64):
+        calls.append(1)
+        raise anthropic.APIConnectionError(request=_dummy_request())
+
+    monkeypatch.setattr(vision_module, "_call_model", mock_call_model)
+
+    async def instant_sleep(_seconds):
+        pass
+
+    monkeypatch.setattr(asyncio, "sleep", instant_sleep)
+
+    response = client.post(
+        "/api/verify",
+        json={"label_image": _JPEG_B64, "application": VALID_APPLICATION},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["manual_review_required"] is True
+    assert body["error_reason"] is not None
+    assert len(calls) == 2  # original + one retry, both failed

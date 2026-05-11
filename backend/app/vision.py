@@ -59,8 +59,10 @@ def _detect_media_type(image_bytes: bytes) -> str:
         return "image/gif"
     if image_bytes[:4] == b"RIFF" and image_bytes[8:12] == b"WEBP":
         return "image/webp"
+    if image_bytes[:4] == b"%PDF":
+        return "application/pdf"
     raise MalformedExtractionError(
-        "Unrecognized image format. Expected JPEG, PNG, GIF, or WEBP."
+        "Unrecognized image format. Expected JPEG, PNG, GIF, WEBP, or PDF."
     )
 
 
@@ -98,6 +100,9 @@ async def _call_model(
     # (we have a sub-5s p95 target) without a measurable accuracy gain on
     # clean labels, and degraded labels are handled via the LOW_CONFIDENCE
     # literal rather than aggressive reasoning.
+    # PDFs use the "document" content block; images use "image".
+    content_type = "document" if media_type == "application/pdf" else "image"
+
     response = await client.messages.create(
         model=settings.anthropic_model,
         max_tokens=8192,
@@ -119,7 +124,7 @@ async def _call_model(
                 "role": "user",
                 "content": [
                     {
-                        "type": "image",
+                        "type": content_type,
                         "source": {
                             "type": "base64",
                             "media_type": media_type,
