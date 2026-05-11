@@ -23,7 +23,6 @@ function mockFileReader(base64Result: string) {
     this.result = base64Result
     this.onload = null
     this.readAsDataURL = vi.fn(function (this: { onload: (() => void) | null }) {
-      // Invoke onload async to mimic real FileReader
       setTimeout(() => this.onload?.(), 0)
     }.bind(this))
   })
@@ -38,7 +37,6 @@ async function setupFileAndFields() {
   const file = new File(['fake'], 'label.jpg', { type: 'image/jpeg' })
 
   await userEvent.upload(fileInput, file)
-  // Wait for FileReader onload to fire
   await act(async () => { await new Promise((r) => setTimeout(r, 10)) })
 
   await userEvent.type(screen.getByLabelText('Brand Name'), 'Test Vodka')
@@ -57,21 +55,58 @@ describe('App', () => {
     expect(screen.getByText(/TTB COLA Verification/)).toBeInTheDocument()
   })
 
-  it('renders the upload and form sections', () => {
+  it('renders demo section and live verification section', () => {
     render(<App />)
-    expect(screen.getByText('1. Upload Label Image')).toBeInTheDocument()
-    expect(screen.getByText('2. Enter Application Data')).toBeInTheDocument()
+    expect(screen.getByText('Quick Demo')).toBeInTheDocument()
+    expect(screen.getByText('Verify Your Own Label')).toBeInTheDocument()
+  })
+
+  it('renders all three demo scenario cards', () => {
+    render(<App />)
+    expect(screen.getByText('All Fields Pass')).toBeInTheDocument()
+    expect(screen.getByText('Brand & ABV Flagged')).toBeInTheDocument()
+    expect(screen.getByText('Degraded Label')).toBeInTheDocument()
+  })
+
+  it('clicking a demo card shows results', async () => {
+    render(<App />)
+    await userEvent.click(screen.getByText('All Fields Pass'))
+
+    expect(screen.getByText('Verification Results')).toBeInTheDocument()
+    expect(screen.getByText(/Demo: All Fields Pass/)).toBeInTheDocument()
+    // All 6 fields should render
+    expect(screen.getByText('Brand Name')).toBeInTheDocument()
+    expect(screen.getAllByText('Eagle Ridge').length).toBeGreaterThan(0)
+  })
+
+  it('demo with flags shows flagged badges', async () => {
+    render(<App />)
+    await userEvent.click(screen.getByText('Brand & ABV Flagged'))
+
+    expect(screen.getByText('Verification Results')).toBeInTheDocument()
+    const flags = screen.getAllByText('FLAG')
+    expect(flags.length).toBe(2)
+  })
+
+  it('demo with degraded label shows manual review alert', async () => {
+    render(<App />)
+    await userEvent.click(screen.getByText('Degraded Label'))
+
+    expect(screen.getByText(/Multiple fields could not be read/)).toBeInTheDocument()
+  })
+
+  it('reset from demo returns to landing page with demo cards', async () => {
+    render(<App />)
+    await userEvent.click(screen.getByText('All Fields Pass'))
+    expect(screen.getByText('Verification Results')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByText('← New Verification'))
+    expect(screen.getByText('Quick Demo')).toBeInTheDocument()
+    expect(screen.getByText('Verify Your Own Label')).toBeInTheDocument()
   })
 
   it('disables submit button when no file is selected', () => {
     render(<App />)
-    const button = screen.getByRole('button', { name: 'Verify Label' })
-    expect(button).toBeDisabled()
-  })
-
-  it('disables submit button when required fields are empty', async () => {
-    render(<App />)
-    await userEvent.type(screen.getByLabelText('Brand Name'), 'Test')
     const button = screen.getByRole('button', { name: 'Verify Label' })
     expect(button).toBeDisabled()
   })
@@ -114,8 +149,8 @@ describe('App', () => {
 
     await userEvent.click(screen.getByText('← New Verification'))
 
+    expect(screen.getByText('Quick Demo')).toBeInTheDocument()
     expect(screen.getByText('1. Upload Label Image')).toBeInTheDocument()
-    expect(screen.getByText('2. Enter Application Data')).toBeInTheDocument()
   })
 
   it('loading spinner has accessible role', async () => {

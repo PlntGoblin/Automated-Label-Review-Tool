@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button, Alert } from '@trussworks/react-uswds'
 import type { ApplicationData, VerificationResult } from './types'
 import { verifyLabel } from './api'
+import { DEMO_SCENARIOS } from './demo-scenarios'
 import ApplicationForm from './components/ApplicationForm'
 import LabelUpload from './components/LabelUpload'
 import ReviewChecklist from './components/ReviewChecklist'
@@ -20,6 +21,7 @@ export default function App() {
   const [fileName, setFileName] = useState<string | null>(null)
   const [application, setApplication] = useState<ApplicationData>(EMPTY_APPLICATION)
   const [result, setResult] = useState<VerificationResult | null>(null)
+  const [resultLabel, setResultLabel] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,6 +42,7 @@ export default function App() {
         application,
       })
       setResult(res)
+      setResultLabel(fileName)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
@@ -54,11 +57,19 @@ export default function App() {
     setError(null)
   }
 
+  const handleDemo = (scenarioId: string) => {
+    const scenario = DEMO_SCENARIOS.find((s) => s.id === scenarioId)
+    if (!scenario) return
+    setResult(scenario.result)
+    setResultLabel(`Demo: ${scenario.title}`)
+  }
+
   const handleReset = () => {
     setLabelBase64(null)
     setFileName(null)
     setApplication(EMPTY_APPLICATION)
     setResult(null)
+    setResultLabel(null)
     setError(null)
   }
 
@@ -72,7 +83,29 @@ export default function App() {
       <main className="alrt-main">
         {!result ? (
           <>
-            <h2 className="usa-heading">Verify a Label</h2>
+            <section style={{ marginBottom: '2rem' }}>
+              <h2 className="usa-heading">Quick Demo</h2>
+              <p style={{ fontSize: '0.875rem', color: '#71767a', marginBottom: '0.75rem' }}>
+                Try a pre-loaded scenario to see how ALRT compares label data against a COLA application.
+              </p>
+              <div className="demo-cards">
+                {DEMO_SCENARIOS.map((scenario) => (
+                  <button
+                    key={scenario.id}
+                    className="demo-card"
+                    onClick={() => handleDemo(scenario.id)}
+                    type="button"
+                  >
+                    <strong>{scenario.title}</strong>
+                    <span>{scenario.description}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <hr style={{ border: 'none', borderTop: '1px solid #dfe1e2', margin: '1.5rem 0' }} />
+
+            <h2 className="usa-heading">Verify Your Own Label</h2>
 
             <div style={{ marginBottom: '1.5rem' }}>
               <h3>1. Upload Label Image</h3>
@@ -107,7 +140,7 @@ export default function App() {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <h2 className="usa-heading" style={{ margin: 0 }}>
-                Results{fileName ? ` — ${fileName}` : ''}
+                Results{resultLabel ? ` — ${resultLabel}` : ''}
               </h2>
               <Button type="button" unstyled onClick={handleReset}>
                 ← New Verification
