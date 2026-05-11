@@ -17,12 +17,6 @@ const EMPTY_APPLICATION: ApplicationData = {
   country_of_origin: '',
 }
 
-const DEMO_IMAGES = [
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuCbAxktmPCZyYBlgwcl9mPwGMh3M8gZos36-ZIO1Wfmi1Wb3wE3yQFTirixSL_dcqyaPyNK4q9wSQQBmUl8xDB-wn6gGhQTg7CUME6l6jh9We7nzEgjGn4sRNUSMpkTJaj06O14PvI9YeGvZX-V5m5keqYY-VesG0D2n3x0nTwS4ICHE9-yPrp6EHQ90xdfX8MUPT9D2KBhh34gtA-A2Hbo3267kQMwHdc6xGGjVFOpmrojj27AfvQHi_YPX9QAlu9_vwBoVSVKJA0',
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuDljnDeTRi91OJWq4FV2pV9WIgXS7YPEAjlpwQrWZjwwpHNKaQMKojmPSXY-mDFDSKhx9m4PQhvsWmTubH_qNTqRRu0jrQthTute2MucfattkUODUEt-PZHwnNp2iHQlkf0gUNP-zC_66-SVQErHtsW21u2iYPhB6yLQayU5lE1a0Z4X6RIOXLBz-48Qngge3Xn15NwufZTwKgkbKMXqZCH9-JsWeJ9TfgJCCnjPfaB9pWHzgVgKX8VSoqpj7uALXAURZN4O8ohtaE',
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuAA75QsLrDCqQkK8FTkNHujury4HXtIZPs9G2GLiv6ptPtLVatrojNepmgCAGcDO9ygX44jcwmI0kGso_Zl3RlnXeO7EJ2LmLpDt9AtBv2P4EgiiaOSnNuZq0h2-UfBHogASkBvWigG1p8o7JwhcWfmIhaNiKNqzt7I_cGUuRmL684BdBPGJRZyPEbhoR9mY1uEo9GfoHm0VyQNKWxXjDTjhsKLXl65JHHx02q8SbngLniQYVkgmPauWkPg1mwzRuepFP0t9wIaUK8',
-]
-
 const DEMO_BADGES = [
   { label: 'PASS', icon: 'check_circle', className: 'bg-green-100 text-green-800' },
   { label: 'FLAGGED', icon: 'warning', className: 'bg-error-container text-on-error-container' },
@@ -200,7 +194,7 @@ export default function App() {
               <p className="text-body-lg text-secondary">Select a scenario to see the automated verification in action.</p>
             </section>
 
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter max-w-4xl" aria-label="Demo scenarios">
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter max-w-3xl mx-auto" aria-label="Demo scenarios">
               {DEMO_SCENARIOS.map((scenario, i) => {
                 const badge = DEMO_BADGES[i]!
                 return (
@@ -208,22 +202,17 @@ export default function App() {
                     key={scenario.id}
                     type="button"
                     onClick={() => handleDemo(scenario.id)}
-                    className="bg-surface-container-lowest border border-outline-variant hover:border-primary transition-all cursor-pointer group relative overflow-hidden p-margin-sm text-left"
+                    className="bg-surface-container-lowest border border-outline-variant hover:border-primary transition-all cursor-pointer p-margin-md text-center flex flex-col items-center gap-3"
                     aria-label={`Load ${scenario.title} demo`}
                   >
-                    <div className={`absolute top-margin-sm right-margin-sm ${badge.className} text-[10px] font-bold px-2 py-1 flex items-center gap-1 uppercase tracking-wider`}>
-                      <span className="material-symbols-outlined text-[14px]">{badge.icon}</span>
+                    <span className="material-symbols-outlined text-[40px] text-outline">{badge.icon}</span>
+                    <div>
+                      <h3 className="text-headline-sm text-primary mb-1">{scenario.title}</h3>
+                      <p className="text-label-sm text-secondary">{scenario.description}</p>
+                    </div>
+                    <span className={`${badge.className} text-[10px] font-bold px-2 py-1 flex items-center gap-1 uppercase tracking-wider`}>
                       {badge.label}
-                    </div>
-                    <div className="mb-4 aspect-[3/4] bg-surface-container overflow-hidden">
-                      <img
-                        src={DEMO_IMAGES[i]}
-                        alt={scenario.title}
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                      />
-                    </div>
-                    <h3 className="text-headline-sm text-primary mb-1">{scenario.title}</h3>
-                    <p className="text-label-sm text-secondary">{scenario.description}</p>
+                    </span>
                   </button>
                 )
               })}
