@@ -1,9 +1,12 @@
 """FastAPI entry point for the ALRT backend."""
 
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from starlette.responses import FileResponse
 
 from app.routes import batch, verify
 
@@ -35,3 +38,19 @@ app.include_router(batch.router, prefix="/api", tags=["verification"])
 async def health() -> dict[str, str]:
     """Liveness probe."""
     return {"status": "ok"}
+
+
+# Serve frontend static build if present (production / Render deploy).
+_FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+
+if _FRONTEND_DIST.is_dir():
+    # Mount static assets (JS, CSS, fonts, images) under /assets
+    app.mount("/assets", StaticFiles(directory=_FRONTEND_DIST / "assets"), name="static")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_spa(full_path: str) -> FileResponse:
+        """Catch-all: serve index.html for SPA client-side routing."""
+        file_path = _FRONTEND_DIST / full_path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(_FRONTEND_DIST / "index.html")

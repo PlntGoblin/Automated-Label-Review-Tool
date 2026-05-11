@@ -2,10 +2,20 @@
 
 A prototype web application for the U.S. Department of the Treasury's Alcohol and Tobacco Tax and Trade Bureau (TTB) that uses AI vision models to support the verification of alcohol beverage labels against their corresponding Certificate of Label Approval (COLA) application data.
 
-> **Status:** Take-home prototype, in active development. Phase 3 of 10 complete (backend with real vision extraction and deterministic field comparison). Not affiliated with TTB or Treasury. Not for production use.
+> **Status:** Take-home prototype. Backend complete (vision extraction, deterministic comparison, image cropping, input validation, batch support). Frontend complete (USWDS, demo mode, 50 component tests). Deployed on Render.
 >
 > **Source:** <https://github.com/PlntGoblin/Automated-Label-Review-Tool>
-> **Live demo:** pending Phase 10 deployment.
+> **Live demo:** <https://alrt.onrender.com>
+
+---
+
+## Quick start for reviewers
+
+**Option 1 — Live demo (no setup):**
+Visit the [live demo](https://alrt.onrender.com) and click any of the three **Quick Demo** cards to see the full verification UI with pre-loaded results. No API key needed.
+
+**Option 2 — Run locally:**
+See [Running locally](#running-locally) below for full backend+frontend setup with real vision extraction.
 
 ---
 
@@ -73,6 +83,7 @@ The agent never sees a binary "FAIL." Each flagged field is shown alongside the 
 | Frontend | React 18 + Vite + TypeScript, USWDS components |
 | AI/Vision | Claude Sonnet 4.6 (Anthropic API) for the prototype; FedRAMP-High options documented under production migration below |
 | Validation | Pydantic v2 |
+| Testing | pytest (133 backend) + Vitest (50 frontend) |
 | Deployment | Render (prototype only) |
 
 ### Cost at TTB scale
@@ -152,18 +163,43 @@ npm run dev
 
 UI at `http://localhost:5173`.
 
+### Tests
+
+```bash
+# Backend (133 tests)
+cd backend && source .venv/bin/activate && pytest
+
+# Frontend (50 tests)
+cd frontend && npm test
+```
+
 ---
 
-## Using the deployed app
+## Deployment
 
-**Live demo:** Pending Phase 10 deployment. In the meantime, follow the **Running locally** section above.
+The app deploys as a single Render web service. The backend serves the frontend static build.
 
-1. Click **Upload Label** and select a label image (JPG, PNG, or PDF).
-2. Fill in the application data fields (brand name, class/type, ABV, net contents, etc.).
-3. Click **Verify**.
-4. Review the **Pass / Flag** checklist. Each flagged field shows the extracted value, the application value, and a cropped image of the region on the label where the field was found, so the discrepancy is visible at a glance.
+### Deploy to Render
 
-For batch processing, use **Batch Upload** to submit multiple label images and a CSV of application data; results appear as a sortable table with one row per label.
+1. Fork this repo (or connect your GitHub account to Render).
+2. Create a new **Web Service** from the repo.
+3. Render will auto-detect `render.yaml` and configure the build.
+4. Set the `ANTHROPIC_API_KEY` environment variable in the Render dashboard.
+5. Deploy.
+
+The build script (`build.sh`) installs Python deps, builds the frontend with Vite, and the FastAPI app serves the static files at the root URL.
+
+> **Note:** The demo mode works without an API key. Real label verification requires `ANTHROPIC_API_KEY` to be set.
+
+---
+
+## Using the app
+
+1. **Quick Demo** — click any demo card on the landing page to see pre-loaded verification results instantly (no API key needed).
+2. **Verify Your Own Label** — upload a label image (JPG, PNG, or PDF), fill in the application data, and click **Verify Label**.
+3. Review the **Pass / Flag** checklist. Each flagged field shows the extracted value, the application value, and a cropped image of the region on the label where the field was found.
+
+For batch processing, use `POST /api/verify/batch` to submit multiple label images and application data; results return the same structure per label.
 
 ---
 
@@ -236,22 +272,29 @@ This is a take-home prototype, so several decisions were made in the absence of 
 .
 ├── backend/
 │   ├── app/
-│   │   ├── main.py              # FastAPI entry point
+│   │   ├── main.py              # FastAPI entry point + static file serving
 │   │   ├── verification.py      # Stage 2: deterministic field comparison
 │   │   ├── warning_check.py     # Government Warning text + visual checks
+│   │   ├── cropping.py          # Defensive bbox validation + region cropping
 │   │   ├── vision.py            # Stage 1: Blind Extraction client
-│   │   └── schemas.py           # Pydantic models
-│   ├── tests/
+│   │   ├── schemas.py           # Pydantic models (API contract)
+│   │   ├── canonical.py         # 27 CFR § 16.21 warning text constant
+│   │   └── config.py            # Environment-driven settings
+│   ├── tests/                   # 133 pytest tests
 │   ├── requirements.txt
 │   └── .env.example
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx
-│   │   ├── components/
-│   │   └── api/
+│   │   ├── App.tsx              # Main app shell with demo mode
+│   │   ├── components/          # LabelUpload, ApplicationForm, ReviewChecklist, etc.
+│   │   ├── demo-scenarios.ts    # 3 pre-canned verification scenarios
+│   │   ├── constants.ts         # Shared field labels and status classes
+│   │   ├── api.ts               # Backend API client
+│   │   └── types.ts             # TypeScript contract (mirrors schemas.py)
 │   ├── package.json
 │   └── vite.config.ts
-├── sample_labels/               # Test labels (passing and with deliberate errors)
+├── build.sh                     # Render build script
+├── render.yaml                  # Render deployment blueprint
 └── README.md
 ```
 
