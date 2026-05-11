@@ -83,7 +83,7 @@ The agent never sees a binary "FAIL." Each flagged field is shown alongside the 
 | Frontend | React 18 + Vite + TypeScript, USWDS components |
 | AI/Vision | Claude Sonnet 4.6 (Anthropic API) for the prototype; FedRAMP-High options documented under production migration below |
 | Validation | Pydantic v2 |
-| Testing | pytest (133 backend) + Vitest (50 frontend) |
+| Testing | pytest (133 backend) + Vitest (71 frontend) + Playwright axe-core (5 a11y) |
 | Deployment | Render (prototype only) |
 
 ### Cost at TTB scale
@@ -169,8 +169,11 @@ UI at `http://localhost:5173`.
 # Backend (133 tests)
 cd backend && source .venv/bin/activate && pytest
 
-# Frontend (50 tests)
+# Frontend (71 component tests)
 cd frontend && npm test
+
+# Accessibility (5 axe-core scans)
+cd frontend && npx playwright test
 ```
 
 ---
@@ -273,6 +276,9 @@ This is a take-home prototype, so several decisions were made in the absence of 
 ├── backend/
 │   ├── app/
 │   │   ├── main.py              # FastAPI entry point + static file serving
+│   │   ├── routes/
+│   │   │   ├── verify.py        # POST /api/verify
+│   │   │   └── batch.py         # POST /api/verify/batch
 │   │   ├── verification.py      # Stage 2: deterministic field comparison
 │   │   ├── warning_check.py     # Government Warning text + visual checks
 │   │   ├── cropping.py          # Defensive bbox validation + region cropping
@@ -285,14 +291,21 @@ This is a take-home prototype, so several decisions were made in the absence of 
 │   └── .env.example
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx              # Main app shell with demo mode
-│   │   ├── components/          # LabelUpload, ApplicationForm, ReviewChecklist, etc.
+│   │   ├── App.tsx              # Main app shell with tabs + demo mode
+│   │   ├── components/          # LabelUpload, ApplicationForm, ReviewChecklist,
+│   │   │                        # FieldRow, WarningPanel, SummaryBar,
+│   │   │                        # BatchUpload, BatchResults
 │   │   ├── demo-scenarios.ts    # 3 pre-canned verification scenarios
 │   │   ├── constants.ts         # Shared field labels and status classes
+│   │   ├── util.ts              # Shared helpers (fileToBase64)
 │   │   ├── api.ts               # Backend API client
 │   │   └── types.ts             # TypeScript contract (mirrors schemas.py)
+│   ├── tests/
+│   │   └── a11y.spec.ts         # Playwright + axe-core accessibility tests
 │   ├── package.json
 │   └── vite.config.ts
+├── .github/workflows/
+│   └── a11y.yml                 # Accessibility CI on every PR
 ├── build.sh                     # Render build script
 ├── render.yaml                  # Render deployment blueprint
 └── README.md

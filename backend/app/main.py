@@ -47,10 +47,13 @@ if _FRONTEND_DIST.is_dir():
     # Mount static assets (JS, CSS, fonts, images) under /assets
     app.mount("/assets", StaticFiles(directory=_FRONTEND_DIST / "assets"), name="static")
 
+    _FRONTEND_DIST_RESOLVED = _FRONTEND_DIST.resolve()
+
     @app.get("/{full_path:path}", include_in_schema=False)
     async def serve_spa(full_path: str) -> FileResponse:
         """Catch-all: serve index.html for SPA client-side routing."""
-        file_path = _FRONTEND_DIST / full_path
-        if file_path.is_file():
+        file_path = (_FRONTEND_DIST / full_path).resolve()
+        # Block path traversal — resolved path must stay inside the dist directory.
+        if file_path.is_file() and str(file_path).startswith(str(_FRONTEND_DIST_RESOLVED)):
             return FileResponse(file_path)
         return FileResponse(_FRONTEND_DIST / "index.html")
