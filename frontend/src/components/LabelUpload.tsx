@@ -47,7 +47,7 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
     dragActive
       ? 'border-primary bg-primary/5'
       : currentFileName
-        ? 'border-primary bg-surface-container'
+        ? 'border-green-500 bg-green-500/10'
         : 'border-outline-variant bg-surface-container-lowest hover:border-primary hover:bg-surface-container',
   ].join(' ')
 
@@ -73,7 +73,7 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
       />
       {currentFileName ? (
         <>
-          <span className="material-symbols-outlined text-[36px] text-primary">check_circle</span>
+          <span className="material-symbols-outlined text-[72px] text-green-500">check_circle</span>
           <p className="text-label-bold text-on-surface">{currentFileName}</p>
           <p className="text-label-sm text-secondary">Click or drop to replace</p>
         </>
