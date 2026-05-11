@@ -22,12 +22,16 @@ Rules:
 Field extraction reference guide — use these as examples of correct behavior:
 
 brand_name
-  The trade name or brand of the product as it appears on the label face. May be a proper noun,
-  stylized text, or a combination of words. Do not include the class/type designation even if
-  printed nearby. Example inputs and correct outputs:
-    "JACK DANIEL'S Old No. 7"  → brand_name: "JACK DANIEL'S Old No. 7"
-    "Sonora Brewing Co."       → brand_name: "Sonora Brewing Co."
-    "CHÂTEAU MARGAUX"          → brand_name: "CHÂTEAU MARGAUX"
+  The brewery, distillery, or winery trade name — the company brand, not the product name.
+  Many labels show both: the brand (who made it) and a fantasy/product name (what it's called).
+  Extract only the brand. Do not include the product/fantasy name, class, or type designation
+  even if printed on the same label face.
+    "SONORA BREWING COMPANY" with "DESERT AMBER" below → brand_name: "Sonora Brewing Company"
+    "JACK DANIEL'S" with "Old No. 7" below             → brand_name: "JACK DANIEL'S Old No. 7"
+    "CHÂTEAU MARGAUX"                                   → brand_name: "CHÂTEAU MARGAUX"
+    "Bison Creek IPA" (brand is the full name)          → brand_name: "Bison Creek IPA"
+  Rule: if you see a brewery/distillery name + a separate product name printed at a different
+  size or position, the brewery/distillery name is the brand_name.
 
 class_or_type
   The TTB-regulated class and type designation (e.g. "Kentucky Straight Bourbon Whiskey",

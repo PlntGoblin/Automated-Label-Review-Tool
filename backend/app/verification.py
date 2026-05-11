@@ -186,12 +186,22 @@ def _infer_beverage_class(class_or_type: str) -> str:
 
 
 def compare_brand_name(extracted: str | None, application: str) -> FieldResult:
-    """Case- and punctuation-insensitive equality for brand name."""
+    """Case- and punctuation-insensitive equality for brand name.
+
+    Also passes when the application brand is fully contained within the extracted
+    text — this handles labels where the vision model captures the product/fantasy
+    name alongside the brand (e.g. 'Sonora Brewing Company DESERT AMBER' when the
+    application only lists 'Sonora Brewing Company').
+    """
     if extracted is None:
         return _make_field_result("FLAG", None, application, "Field not found on label.")
     if _is_low_confidence(extracted):
         return _make_field_result("LOW_CONFIDENCE", extracted, application, _LOW_CONF_NOTE)
-    if normalize_for_brand(extracted) == normalize_for_brand(application):
+    norm_ext = normalize_for_brand(extracted)
+    norm_app = normalize_for_brand(application)
+    if norm_ext == norm_app:
+        return _make_field_result("PASS", extracted, application)
+    if norm_app in norm_ext:
         return _make_field_result("PASS", extracted, application)
     return _make_field_result(
         "FLAG", extracted, application, "Brand name does not match application."
