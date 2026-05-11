@@ -61,12 +61,14 @@ _WINE_TERMS = frozenset(
 
 
 def normalize_for_brand(s: str) -> str:
-    """Lowercase, replace punctuation with spaces, collapse whitespace.
+    """Lowercase, normalize punctuation, collapse whitespace.
 
-    Using a space replacement (not deletion) ensures 'BOULDER,CO' and
-    'BOULDER, CO' both normalize to 'boulder co' rather than 'boulderco'.
+    Apostrophes inside words are removed so STONE'S and STONES compare equal.
+    Other punctuation becomes spaces so 'BOULDER,CO' and 'BOULDER, CO' both
+    normalize to 'boulder co' rather than 'boulderco'.
     """
     s = unicodedata.normalize("NFC", s).lower()
+    s = re.sub(r"['’`]", "", s)
     s = re.sub(r"[^\w\s]", " ", s)
     return re.sub(r"\s+", " ", s).strip()
 
@@ -367,16 +369,19 @@ def verify_label(
         ),
     }
 
-    # Attach region crops from the vision model's bounding boxes.
+    # Attach crops only for fields that need human attention. Returning every
+    # crop on every successful request bloats the JSON response with several
+    # base64 PNGs and adds synchronous image work to the latency-critical path.
     for field_name, field_result in fields.items():
-        bbox = extracted.bboxes.get(field_name)
-        field_result.region_crop = crop_region(image_bytes, bbox, image_size)
+        if field_result.status != "PASS":
+            bbox = extracted.bboxes.get(field_name)
+            field_result.region_crop = crop_region(image_bytes, bbox, image_size)
 
     government_warning = check_government_warning(extracted.government_warning)
-    # Attach the government warning crop from its dedicated bbox.
-    government_warning.region_crop = crop_region(
-        image_bytes, extracted.government_warning.bbox, image_size
-    )
+    if government_warning.status != "PASS":
+        government_warning.region_crop = crop_region(
+            image_bytes, extracted.government_warning.bbox, image_size
+        )
 
     pass_count = sum(1 for f in fields.values() if f.status == "PASS")
     flag_count = sum(1 for f in fields.values() if f.status == "FLAG")

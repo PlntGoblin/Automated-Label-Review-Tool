@@ -78,7 +78,7 @@ describe('App', () => {
     expect(screen.getByText(/Demo: All Fields Pass/)).toBeInTheDocument()
     // All 6 fields should render
     expect(screen.getByText('Brand Name')).toBeInTheDocument()
-    expect(screen.getAllByText('Eagle Ridge').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Desert Amber').length).toBeGreaterThan(0)
   })
 
   it('demo with flags shows flagged badges', async () => {
@@ -164,6 +164,6 @@ describe('App', () => {
 
     const spinner = await screen.findByRole('status')
     expect(spinner).toHaveAttribute('aria-live', 'polite')
-    expect(screen.getByText(/Analyzing label with AI vision/)).toBeInTheDocument()
+    expect(screen.getByText(/Running AI vision/)).toBeInTheDocument()
   })
 })

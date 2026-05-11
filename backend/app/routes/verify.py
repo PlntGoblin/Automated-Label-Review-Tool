@@ -11,6 +11,7 @@ import base64
 import binascii
 import io
 import logging
+import time
 
 from fastapi import APIRouter, HTTPException
 from PIL import Image
@@ -136,6 +137,7 @@ def _manual_review_result(
 
 async def run_single_verification(request: VerifyRequest) -> VerificationResult:
     """Full single-label verification pipeline. Shared by /verify and /verify/batch."""
+    started = time.perf_counter()
     try:
         image_bytes = base64.b64decode(request.label_image, validate=True)
     except binascii.Error as e:
@@ -149,11 +151,16 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
         logger.warning("image validation failed: %s", validation_error)
         return _manual_review_result(request.application, validation_error)
 
+    original_size = len(image_bytes)
+
     # Normalize to ≤1568px so bbox coordinates match crop coordinates.
     image_bytes = _normalize_image(image_bytes)
+    normalized_size = len(image_bytes)
 
     try:
+        extraction_started = time.perf_counter()
         extracted = await vision.extract(image_bytes)
+        extraction_ms = (time.perf_counter() - extraction_started) * 1000
     except MalformedExtractionError as e:
         logger.warning("malformed extraction: %s", e)
         return _manual_review_result(
@@ -165,7 +172,20 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
             request.application, f"Vision API failed: {e}"
         )
 
-    return verify_label(extracted, request.application, image_bytes)
+    verification_started = time.perf_counter()
+    result = verify_label(extracted, request.application, image_bytes)
+    verification_ms = (time.perf_counter() - verification_started) * 1000
+    total_ms = (time.perf_counter() - started) * 1000
+    logger.info(
+        "verification complete: original_bytes=%d normalized_bytes=%d "
+        "extraction_ms=%.0f verification_ms=%.0f total_ms=%.0f",
+        original_size,
+        normalized_size,
+        extraction_ms,
+        verification_ms,
+        total_ms,
+    )
+    return result
 
 
 @router.post("/verify", response_model=VerificationResult)

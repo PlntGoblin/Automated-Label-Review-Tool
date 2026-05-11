@@ -58,6 +58,7 @@ All configuration is loaded from environment variables (see `.env.example`):
 |---|---|---|
 | `ANTHROPIC_API_KEY` | _(required)_ | API key for the vision model. Never commit. |
 | `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | Vision model identifier. |
+| `ANTHROPIC_MAX_TOKENS` | `1000` | Maximum tokens allowed in the extraction response. |
 | `MAX_BATCH_SIZE` | `300` | Reject batches larger than this. |
 | `MAX_CONCURRENT_REQUESTS` | `10` | Semaphore size for batch concurrency. |
 

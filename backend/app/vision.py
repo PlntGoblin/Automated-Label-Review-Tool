@@ -48,6 +48,17 @@ _PROMPT_PATH = (
 _PROMPT = _PROMPT_PATH.read_text(encoding="utf-8")
 
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?|\n?```\s*$", re.MULTILINE)
+_CLIENT: anthropic.AsyncAnthropic | None = None
+_CLIENT_API_KEY: str | None = None
+
+
+def _get_client() -> anthropic.AsyncAnthropic:
+    """Return a process-local Anthropic client so HTTP connections can be reused."""
+    global _CLIENT, _CLIENT_API_KEY
+    if _CLIENT is None or _CLIENT_API_KEY != settings.anthropic_api_key:
+        _CLIENT = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+        _CLIENT_API_KEY = settings.anthropic_api_key
+    return _CLIENT
 
 
 def _detect_media_type(image_bytes: bytes) -> str:
@@ -106,7 +117,7 @@ async def _call_model(
 
     response = await client.messages.create(
         model=settings.anthropic_model,
-        max_tokens=1500,
+        max_tokens=settings.anthropic_max_tokens,
         system=[
             {
                 "type": "text",
@@ -184,7 +195,7 @@ async def extract(image_bytes: bytes) -> ExtractedLabel:
     media_type = _detect_media_type(image_bytes)
     image_b64 = base64.standard_b64encode(image_bytes).decode("ascii")
 
-    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+    client = _get_client()
     raw_text = await _call_with_retry(client, media_type, image_b64)
 
     payload = _isolate_json_object(raw_text)

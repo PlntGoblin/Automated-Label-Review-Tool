@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # Phase 1.5 hardening pass updated the default. Override via env var if
     # accuracy or cost benchmarking favors a different model.
     anthropic_model: str = "claude-sonnet-4-6"
+    anthropic_max_tokens: int = 1000
     max_batch_size: int = 300
     max_concurrent_requests: int = 10
 

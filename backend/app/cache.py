@@ -16,7 +16,6 @@ import hashlib
 import logging
 from collections import OrderedDict
 from threading import Lock
-from typing import Optional
 
 from app.schemas import ExtractedLabel
 
@@ -31,7 +30,7 @@ def _key(image_bytes: bytes) -> str:
     return hashlib.sha256(image_bytes).hexdigest()
 
 
-def get(image_bytes: bytes) -> Optional[ExtractedLabel]:
+def get(image_bytes: bytes) -> ExtractedLabel | None:
     """Return a cached ExtractedLabel or None on a miss."""
     k = _key(image_bytes)
     with _lock:
@@ -59,3 +58,13 @@ def size() -> int:
     """Current number of cached entries."""
     with _lock:
         return len(_cache)
+
+
+def clear() -> None:
+    """Clear cached extraction results.
+
+    Used by tests and local benchmarking so cached model responses do not
+    hide retry/error-path behavior.
+    """
+    with _lock:
+        _cache.clear()

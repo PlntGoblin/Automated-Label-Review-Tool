@@ -17,12 +17,19 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from app import cache as extraction_cache
 from app import vision as vision_module
 from app.main import app
 from app.schemas import ExtractedLabel, FieldStatus, WarningExtraction
 from app.vision import MalformedExtractionError, VisionAPIError
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def clear_extraction_cache() -> None:
+    """Keep mocked vision responses from leaking between tests."""
+    extraction_cache.clear()
 
 VALID_APPLICATION = {
     "brand_name": "OLD TOM DISTILLERY",

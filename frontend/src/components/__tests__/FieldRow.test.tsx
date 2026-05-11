@@ -71,13 +71,13 @@ describe('FieldRow', () => {
 
   it('shows crop placeholder when region_crop is null', () => {
     render(<FieldRow name="brand_name" result={BASE_RESULT} />)
-    expect(screen.getByText('No crop')).toBeInTheDocument()
+    expect(screen.getByText('image_not_supported')).toBeInTheDocument()
   })
 
   it('shows crop image when region_crop is present', () => {
     const result: FieldResult = { ...BASE_RESULT, region_crop: 'data:image/png;base64,AAAA' }
     render(<FieldRow name="brand_name" result={result} />)
-    const img = screen.getByAltText('Cropped region for Brand Name')
+    const img = screen.getByAltText('Label crop for Brand Name')
     expect(img).toHaveAttribute('src', 'data:image/png;base64,AAAA')
   })
 })

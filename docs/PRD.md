@@ -18,8 +18,8 @@ The system never declares a label "FAILED." It surfaces flags for an agent's rev
 **Three other rules that must hold throughout the codebase:**
 
 1. The application data must never be sent to the vision model. If you find yourself passing application fields into a prompt or system message, stop and re-read this section.
-2. Every field comparison surfaces a cropped image of the label region in the response. The cropped image is what the agent uses to confirm the flag.
-3. The Government Warning is checked in two ways: (a) Unicode-normalized exact string equality against the canonical 27 CFR § 16.21 text in deterministic Python, and (b) the model returns visual-property booleans + a region crop the agent visually confirms. The model never decides whether the warning is compliant.
+2. Fields that need agent attention (`FLAG` or `LOW_CONFIDENCE`) surface a cropped image of the label region when a usable bounding box is available. Passing fields keep `region_crop: null` to avoid bloating the response.
+3. The Government Warning is checked in two ways: (a) Unicode-normalized exact string equality against the canonical 27 CFR § 16.21 text in deterministic Python, and (b) the model returns visual-property booleans plus a region crop when the warning is flagged. The model never decides whether the warning is compliant.
 
 ---
 
@@ -140,7 +140,7 @@ Build in this order. Each phase ends with a verification step you must run befor
 **Goal:** A runnable FastAPI app that returns hardcoded mock data, so the contract is locked before adding the model call.
 
 **Files to create:**
-- `backend/app/config.py` — Pydantic Settings class loading `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-4-6`), `MAX_BATCH_SIZE` (default `300`), `MAX_CONCURRENT_REQUESTS` (default `10`).
+- `backend/app/config.py` — Pydantic Settings class loading `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-4-6`), `ANTHROPIC_MAX_TOKENS` (default `1000`), `MAX_BATCH_SIZE` (default `300`), `MAX_CONCURRENT_REQUESTS` (default `10`).
 - `backend/app/schemas.py` — see Section 4 below for exact schemas. All schemas in this one file.
 - `backend/app/main.py` — FastAPI app, CORS allowing `http://localhost:5173`, mount routes from `routes/`.
 - `backend/app/routes/verify.py` — `POST /api/verify` accepting the request schema, returning a hardcoded `VerificationResult` for now.
@@ -158,7 +158,7 @@ Build in this order. Each phase ends with a verification step you must run befor
 
 ### Phase 2 — Stage 1: Blind Extraction (vision module)
 
-**Goal:** Replace the hardcoded mock with a real call to Claude Sonnet 4.5 that performs Blind Extraction.
+**Goal:** Replace the hardcoded mock with a real call to the configured Claude vision model that performs Blind Extraction.
 
 **Files to create/modify:**
 - `backend/app/vision.py` — see Section 5 for the exact prompt and response handling.
@@ -209,7 +209,7 @@ A field is `LOW_CONFIDENCE` if the extracted value is the literal string `"LOW_C
 2. If the extracted text is missing entirely → `FLAG`.
 3. If the extracted text matches canonical exactly after normalization → `PASS` for the text component.
 4. If the extracted text is non-empty but does not match → `FLAG`, and include the diff in the response.
-5. The visual-property booleans (`is_all_caps`, `is_bold`, `is_continuous_paragraph`) are reported in the response as informational fields. They do **not** flip the status from `PASS` to `FLAG`. The agent reviews them in the UI alongside the cropped image.
+5. The visual-property booleans (`is_all_caps`, `is_bold`, `is_continuous_paragraph`) are reported in the response as informational fields. They do **not** flip the status from `PASS` to `FLAG`. If the warning text is flagged, the agent reviews them in the UI alongside the cropped image.
 
 **Acceptance criteria:**
 - `pytest backend/tests/` passes with at least 90% coverage of `verification.py` and `warning_check.py`
@@ -218,7 +218,7 @@ A field is `LOW_CONFIDENCE` if the extracted value is the literal string `"LOW_C
 
 ### Phase 4 — Image cropping for region overlays
 
-**Goal:** Each `FieldResult` includes a cropped image of the region on the label where the field was found.
+**Goal:** Each non-passing `FieldResult` includes a cropped image of the region on the label where the field was found when a usable bounding box is available.
 
 **Files to create:**
 - `backend/app/cropping.py` — `def crop_region(image: bytes, bbox: BoundingBox | None, image_size: tuple[int, int]) -> str | None` returning a base64-encoded PNG or `None`.
@@ -240,7 +240,7 @@ A field is `LOW_CONFIDENCE` if the extracted value is the literal string `"LOW_C
 When `crop_region` returns `None`, the `region_crop` field on the corresponding `FieldResult` is `None` and the frontend renders a small "no preview available" placeholder instead of a broken `<img>`. The status of the field itself is unaffected — bbox failures do not change `PASS` / `FLAG` / `LOW_CONFIDENCE`.
 
 **Acceptance criteria:**
-- A real verification call returns crops for fields where the model produced usable bboxes; fields with bad bboxes have `region_crop: null` and no errors thrown
+- A real verification call returns crops for `FLAG` / `LOW_CONFIDENCE` fields where the model produced usable bboxes; passing fields and fields with bad bboxes have `region_crop: null` and no errors thrown
 - Tests cover all six rejection cases above
 - The frontend renders gracefully when `region_crop` is `null` — no broken image icons
 - Inducing a deliberately bad bbox (e.g. coordinates `{x: -50, y: -50, width: 10, height: 10}`) does not raise an exception and does not produce a malformed crop
@@ -273,8 +273,8 @@ When `crop_region` returns `None`, the `region_crop` field on the corresponding 
 - `frontend/src/components/LabelUpload.tsx` — drag-and-drop or button upload, displays the selected image
 - `frontend/src/components/ApplicationForm.tsx` — controlled form with USWDS form components for each application field
 - `frontend/src/components/ReviewChecklist.tsx` — renders a list of `FieldRow`s
-- `frontend/src/components/FieldRow.tsx` — renders one field's status, extracted value, application value, and cropped image. Status indicator uses USWDS color tokens, NOT raw red/green. Includes `aria-label` with full status context. When `region_crop` is `null`, render a small placeholder ("Region preview not available — view full label image") rather than a broken image element.
-- `frontend/src/components/WarningPanel.tsx` — side-by-side: cropped warning region image | canonical 27 CFR § 16.21 text. Visual booleans displayed as informational chips.
+- `frontend/src/components/FieldRow.tsx` — renders one field's status, extracted value, application value, and cropped image when present. Status indicator uses USWDS color tokens, NOT raw red/green. Includes `aria-label` with full status context. When `region_crop` is `null`, render a small placeholder rather than a broken image element.
+- `frontend/src/components/WarningPanel.tsx` — side-by-side when flagged: cropped warning region image | canonical 27 CFR § 16.21 text. Visual booleans displayed as informational chips.
 
 **UI rules:**
 - The status icon for each field has a complete `aria-label` of the form `Flagged: ${fieldName} mismatch — extracted '${extracted}', application '${application}'`. Screen readers should be able to convey the full state without sighted context.
