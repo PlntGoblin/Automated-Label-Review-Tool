@@ -81,7 +81,7 @@ export default function LabelUpload({ onFilesChanged, currentFileNames }: LabelU
     <div className="flex flex-col gap-2 w-3/5">
       <p className="text-label-bold text-on-surface uppercase tracking-wider">Label Preview</p>
 
-      <div className="bg-white border border-outline-variant rounded-sm shadow-[0_4px_24px_rgba(0,0,0,0.10)] p-4 flex flex-col gap-3">
+      <div className={`border rounded-sm shadow-[0_4px_24px_rgba(0,0,0,0.10)] p-4 flex flex-col gap-3 transition-colors ${hasImages ? 'bg-green-50 border-green-300' : 'bg-white border-outline-variant'}`}>
 
         {/* Drop zone — always portrait aspect ratio */}
         <div
