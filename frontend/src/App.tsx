@@ -226,7 +226,9 @@ export default function App() {
                   aria-labelledby="tab-single"
                   className="grid grid-cols-1 lg:grid-cols-2 p-margin-lg gap-margin-lg"
                 >
-                  <LabelUpload onFileSelected={handleFileSelected} currentFileName={fileName} />
+                  <div className="flex items-center justify-center h-full">
+                    <LabelUpload onFileSelected={handleFileSelected} currentFileName={fileName} />
+                  </div>
                   <div className="space-y-4">
                     <ApplicationForm data={application} onChange={setApplication} disabled={loading} />
                     <div className="pt-margin-md flex justify-end">

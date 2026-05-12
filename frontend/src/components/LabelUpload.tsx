@@ -43,7 +43,7 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
   )
 
   const zoneClass = [
-    'border-2 border-dashed flex flex-col items-center justify-center gap-3 min-h-[224px] p-margin-lg text-center cursor-pointer select-none transition-colors',
+    'border-2 border-dashed flex flex-col items-center justify-center gap-3 aspect-square w-3/5 p-margin-lg text-center cursor-pointer select-none transition-colors',
     dragActive
       ? 'border-primary bg-primary/5'
       : currentFileName
@@ -73,13 +73,13 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
       />
       {currentFileName ? (
         <>
-          <span className="material-symbols-outlined text-green-500" style={{ fontSize: '122px' }}>check_circle</span>
+          <span className="material-symbols-outlined text-green-500" style={{ fontSize: '64px' }}>check_circle</span>
           <p className="text-label-bold text-on-surface">{currentFileName}</p>
           <p className="text-label-sm text-secondary">Click or drop to replace</p>
         </>
       ) : (
         <>
-          <span className="material-symbols-outlined text-[48px] text-outline">cloud_upload</span>
+          <span className="material-symbols-outlined text-[96px] text-outline">cloud_upload</span>
           <div>
             <p className="text-body-md text-on-surface font-semibold">Drag &amp; drop a label image</p>
             <p className="text-label-sm text-secondary mt-1">JPEG, PNG, or PDF (max 10 MB)</p>
