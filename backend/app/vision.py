@@ -103,17 +103,24 @@ def _first_text_block(response: anthropic.types.Message) -> str:
 
 async def _call_model(
     client: anthropic.AsyncAnthropic,
-    media_type: str,
-    image_b64: str,
+    images: list[tuple[str, str]],
 ) -> str:
-    """One model call. Returns the raw response text."""
-    # Thinking is disabled and effort is low because Stage 1 is a literal
-    # extraction task with a strict prompt — adaptive thinking adds latency
-    # (we have a sub-5s p95 target) without a measurable accuracy gain on
-    # clean labels, and degraded labels are handled via the LOW_CONFIDENCE
-    # literal rather than aggressive reasoning.
-    # PDFs use the "document" content block; images use "image".
-    content_type = "document" if media_type == "application/pdf" else "image"
+    """One model call. Returns the raw response text.
+
+    images: list of (media_type, image_b64) pairs — supports multi-image
+    labels (e.g. front + back of a bottle) sent in a single API call.
+    """
+    content = []
+    for media_type, image_b64 in images:
+        content_type = "document" if media_type == "application/pdf" else "image"
+        content.append({
+            "type": content_type,
+            "source": {
+                "type": "base64",
+                "media_type": media_type,
+                "data": image_b64,
+            },
+        })
 
     response = await client.messages.create(
         model=settings.anthropic_model,
@@ -122,36 +129,17 @@ async def _call_model(
             {
                 "type": "text",
                 "text": _PROMPT,
-                # Cache the prompt so identical-prefix calls reuse it. Today
-                # the prompt is below the per-model minimum (~2KB for Sonnet)
-                # so this is a no-op; kept here so caching activates if the
-                # prompt grows.
                 "cache_control": {"type": "ephemeral"},
             }
         ],
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": content_type,
-                        "source": {
-                            "type": "base64",
-                            "media_type": media_type,
-                            "data": image_b64,
-                        },
-                    },
-                ],
-            },
-        ],
+        messages=[{"role": "user", "content": content}],
     )
     return _first_text_block(response)
 
 
 async def _call_with_retry(
     client: anthropic.AsyncAnthropic,
-    media_type: str,
-    image_b64: str,
+    images: list[tuple[str, str]],
 ) -> str:
     """One retry on transient errors with a 1s delay; otherwise surface as VisionAPIError."""
     transient = (
@@ -160,12 +148,12 @@ async def _call_with_retry(
         anthropic.InternalServerError,
     )
     try:
-        return await _call_model(client, media_type, image_b64)
+        return await _call_model(client, images)
     except transient as first_err:
         logger.warning("vision transient error, retrying after 1s: %s", first_err)
         await asyncio.sleep(1)
         try:
-            return await _call_model(client, media_type, image_b64)
+            return await _call_model(client, images)
         except transient as second_err:
             raise VisionAPIError(
                 f"Model call failed after retry: {second_err}"
@@ -220,8 +208,11 @@ async def extract_warning_text(image_bytes: bytes) -> str | None:
         return None
 
 
-async def extract(image_bytes: bytes) -> ExtractedLabel:
-    """Run Blind Extraction on the label image and return a validated ExtractedLabel.
+async def extract(images_bytes: list[bytes]) -> ExtractedLabel:
+    """Run Blind Extraction on one or more label images and return a validated ExtractedLabel.
+
+    Multiple images (e.g. front + back of a bottle) are sent together in a
+    single API call so the model can read all fields across the full label set.
 
     Raises:
         MalformedExtractionError: model output could not be parsed or validated.
@@ -230,15 +221,18 @@ async def extract(image_bytes: bytes) -> ExtractedLabel:
     if not settings.anthropic_api_key:
         raise VisionAPIError("ANTHROPIC_API_KEY is not set.")
 
-    cached = extraction_cache.get(image_bytes)
+    cache_key = b"\x00".join(images_bytes)
+    cached = extraction_cache.get(cache_key)
     if cached is not None:
         return cached
 
-    media_type = _detect_media_type(image_bytes)
-    image_b64 = base64.standard_b64encode(image_bytes).decode("ascii")
+    images = [
+        (_detect_media_type(b), base64.standard_b64encode(b).decode("ascii"))
+        for b in images_bytes
+    ]
 
     client = _get_client()
-    raw_text = await _call_with_retry(client, media_type, image_b64)
+    raw_text = await _call_with_retry(client, images)
 
     payload = _isolate_json_object(raw_text)
     try:
@@ -257,5 +251,5 @@ async def extract(image_bytes: bytes) -> ExtractedLabel:
             f"Model JSON did not match ExtractedLabel schema: {e}"
         ) from e
 
-    extraction_cache.set(image_bytes, result)
+    extraction_cache.set(cache_key, result)
     return result

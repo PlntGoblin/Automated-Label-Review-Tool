@@ -17,9 +17,9 @@ const EMPTY_APPLICATION: ApplicationData = {
 
 
 export default function App() {
-  const [labelBase64, setLabelBase64] = useState<string | null>(null)
-  const [labelDataUrl, setLabelDataUrl] = useState<string | null>(null)
-  const [fileName, setFileName] = useState<string | null>(null)
+  const [labelBase64s, setLabelBase64s] = useState<string[]>([])
+  const [labelDataUrls, setLabelDataUrls] = useState<string[]>([])
+  const [fileNames, setFileNames] = useState<string[]>([])
   const [application, setApplication] = useState<ApplicationData>(EMPTY_APPLICATION)
   const [result, setResult] = useState<VerificationResult | null>(null)
   const [resultLabel, setResultLabel] = useState<string | null>(null)
@@ -28,20 +28,20 @@ export default function App() {
   const [overrides, setOverrides] = useState<Record<string, FieldOverride>>({})
 
   const canSubmit =
-    labelBase64 !== null &&
+    labelBase64s.length > 0 &&
     application.brand_name.trim() !== '' &&
     application.class_or_type.trim() !== '' &&
     !loading
 
   const handleSubmit = async () => {
-    if (!labelBase64) return
+    if (labelBase64s.length === 0) return
     setLoading(true)
     setError(null)
     setResult(null)
     try {
-      const res = await verifyLabel({ label_image: labelBase64, application })
+      const res = await verifyLabel({ label_images: labelBase64s, application })
       setResult(res)
-      setResultLabel(fileName)
+      setResultLabel(fileNames[0] ?? null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
@@ -49,10 +49,10 @@ export default function App() {
     }
   }
 
-  const handleFileSelected = (base64: string, dataUrl: string, name: string) => {
-    setLabelBase64(base64)
-    setLabelDataUrl(dataUrl)
-    setFileName(name)
+  const handleFilesChanged = (base64s: string[], dataUrls: string[], names: string[]) => {
+    setLabelBase64s(base64s)
+    setLabelDataUrls(dataUrls)
+    setFileNames(names)
     setResult(null)
     setError(null)
   }
@@ -65,9 +65,9 @@ export default function App() {
   }
 
   const handleReset = () => {
-    setLabelBase64(null)
-    setLabelDataUrl(null)
-    setFileName(null)
+    setLabelBase64s([])
+    setLabelDataUrls([])
+    setFileNames([])
     setApplication(EMPTY_APPLICATION)
     setResult(null)
     setResultLabel(null)
@@ -140,7 +140,7 @@ export default function App() {
                 New Verification
               </button>
             </div>
-            <ReviewChecklist result={result} labelDataUrl={labelDataUrl} overrides={overrides} onOverride={handleOverride} />
+            <ReviewChecklist result={result} labelDataUrl={labelDataUrls[0] ?? null} overrides={overrides} onOverride={handleOverride} />
           </div>
 
         ) : (
@@ -152,15 +152,15 @@ export default function App() {
               <div className="flex items-center justify-center gap-0 max-w-2xl mx-auto">
                 {/* Step 1 */}
                 <div className="flex flex-col items-center gap-2">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-label-bold transition-colors ${fileName ? 'bg-primary text-on-primary' : 'bg-primary text-on-primary'}`}>1</div>
-                  <span className={`text-[11px] font-extrabold uppercase tracking-wider ${fileName ? 'text-on-surface' : 'text-on-surface'}`}>Upload Label</span>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-label-bold transition-colors ${fileNames.length > 0 ? 'bg-primary text-on-primary' : 'bg-primary text-on-primary'}`}>1</div>
+                  <span className={`text-[11px] font-extrabold uppercase tracking-wider ${fileNames.length > 0 ? 'text-on-surface' : 'text-on-surface'}`}>Upload Label</span>
                 </div>
                 {/* Line */}
-                <div className={`h-px flex-1 mx-2 mb-5 transition-colors ${fileName ? 'bg-on-surface' : 'bg-outline-variant'}`} />
+                <div className={`h-px flex-1 mx-2 mb-5 transition-colors ${fileNames.length > 0 ? 'bg-on-surface' : 'bg-outline-variant'}`} />
                 {/* Step 2 */}
                 <div className="flex flex-col items-center gap-2">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-label-bold border-2 transition-colors ${fileName ? 'border-primary bg-surface-container text-primary' : 'border-outline-variant bg-surface-container text-outline'}`}>2</div>
-                  <span className={`text-[11px] font-extrabold uppercase tracking-wider ${fileName ? 'text-on-surface' : 'text-secondary'}`}>Application Data</span>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-label-bold border-2 transition-colors ${fileNames.length > 0 ? 'border-primary bg-surface-container text-primary' : 'border-outline-variant bg-surface-container text-outline'}`}>2</div>
+                  <span className={`text-[11px] font-extrabold uppercase tracking-wider ${fileNames.length > 0 ? 'text-on-surface' : 'text-secondary'}`}>Application Data</span>
                 </div>
                 {/* Line */}
                 <div className={`h-px flex-1 mx-2 mb-5 transition-colors ${canSubmit ? 'bg-on-surface' : 'bg-outline-variant'}`} />
@@ -186,7 +186,7 @@ export default function App() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 p-margin-lg gap-margin-lg">
                 <div className="flex items-center justify-center h-full">
-                  <LabelUpload onFileSelected={handleFileSelected} currentFileName={fileName} />
+                  <LabelUpload onFilesChanged={handleFilesChanged} currentFileNames={fileNames} />
                 </div>
                 <div className="space-y-4">
                   <ApplicationForm data={application} onChange={setApplication} disabled={loading} />

@@ -53,7 +53,7 @@ class ExtractedLabel(BaseModel):
 class VerifyRequest(BaseModel):
     """Single-label verification request body."""
 
-    label_image: str
+    label_images: list[str]
     application: ApplicationData
 
 

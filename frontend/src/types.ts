@@ -37,7 +37,7 @@ export interface ExtractedLabel {
 }
 
 export interface VerifyRequest {
-  label_image: string;
+  label_images: string[];
   application: ApplicationData;
 }
 

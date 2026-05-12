@@ -138,28 +138,27 @@ def _manual_review_result(
 async def run_single_verification(request: VerifyRequest) -> VerificationResult:
     """Full single-label verification pipeline. Shared by /verify and /verify/batch."""
     started = time.perf_counter()
-    try:
-        image_bytes = base64.b64decode(request.label_image, validate=True)
-    except binascii.Error as e:
-        logger.warning("invalid base64 label_image: %s", e)
-        return _manual_review_result(
-            request.application, f"Invalid base64 image: {e}"
-        )
 
-    validation_error = _validate_image_bytes(image_bytes)
-    if validation_error:
-        logger.warning("image validation failed: %s", validation_error)
-        return _manual_review_result(request.application, validation_error)
+    all_image_bytes: list[bytes] = []
+    for img_b64 in request.label_images:
+        try:
+            image_bytes = base64.b64decode(img_b64, validate=True)
+        except binascii.Error as e:
+            logger.warning("invalid base64 label_image: %s", e)
+            return _manual_review_result(request.application, f"Invalid base64 image: {e}")
 
-    original_size = len(image_bytes)
+        validation_error = _validate_image_bytes(image_bytes)
+        if validation_error:
+            logger.warning("image validation failed: %s", validation_error)
+            return _manual_review_result(request.application, validation_error)
 
-    # Normalize to ≤1568px so bbox coordinates match crop coordinates.
-    image_bytes = _normalize_image(image_bytes)
-    normalized_size = len(image_bytes)
+        all_image_bytes.append(_normalize_image(image_bytes))
+
+    original_size = sum(len(b) for b in all_image_bytes)
 
     try:
         extraction_started = time.perf_counter()
-        extracted = await vision.extract(image_bytes)
+        extracted = await vision.extract(all_image_bytes)
         extraction_ms = (time.perf_counter() - extraction_started) * 1000
     except MalformedExtractionError as e:
         logger.warning("malformed extraction: %s", e)
@@ -172,52 +171,56 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
             request.application, f"Vision API failed: {e}"
         )
 
-    verification_started = time.perf_counter()
-    result = verify_label(extracted, request.application, image_bytes)
+    # Use first image for crop operations (bbox coords Claude returns are
+    # relative to the first image when multiple are sent).
+    primary_bytes = all_image_bytes[0]
 
-    # If the government warning is not PASS and its bbox is portrait (height > width),
-    # the warning is likely printed sideways. Crop, rotate 90° CW, and re-read it.
-    gov_bbox = extracted.government_warning.bbox
-    if result.government_warning.status != "PASS" and gov_bbox is not None and gov_bbox.height > gov_bbox.width:
-        logger.info("gov warning rotated bbox detected — attempting targeted re-extraction")
-        try:
-            img = Image.open(io.BytesIO(image_bytes))
-            img_w, img_h = img.size
-            x1 = max(gov_bbox.x, 0)
-            y1 = max(gov_bbox.y, 0)
-            x2 = min(gov_bbox.x + gov_bbox.width, img_w)
-            y2 = min(gov_bbox.y + gov_bbox.height, img_h)
-            cropped = img.crop((x1, y1, x2, y2)).rotate(-90, expand=True)
-            buf = io.BytesIO()
-            cropped.save(buf, format="PNG")
-            reread_text = await vision.extract_warning_text(buf.getvalue())
-            if reread_text:
-                from app.schemas import WarningExtraction
-                from app.warning_check import check_government_warning
-                reread_extraction = WarningExtraction(
-                    verbatim_text=reread_text,
-                    is_all_caps=extracted.government_warning.is_all_caps,
-                    is_bold=extracted.government_warning.is_bold,
-                    is_continuous_paragraph=extracted.government_warning.is_continuous_paragraph,
-                    bbox=gov_bbox,
-                )
-                reread_result = check_government_warning(reread_extraction)
-                # Only upgrade — never downgrade a result with the re-read
-                status_rank = {"PASS": 0, "LOW_CONFIDENCE": 1, "FLAG": 2}
-                if status_rank[reread_result.status] < status_rank[result.government_warning.status]:
-                    reread_result.region_crop = result.government_warning.region_crop
-                    result.government_warning = reread_result
-                    logger.info("gov warning re-extraction improved status to %s", reread_result.status)
-        except Exception:
-            logger.warning("gov warning re-extraction failed", exc_info=True)
+    verification_started = time.perf_counter()
+    result = verify_label(extracted, request.application, primary_bytes)
+
+    # Gov warning rotation re-extraction only makes sense with a single image —
+    # bbox coordinates are ambiguous across multiple images.
+    if len(all_image_bytes) == 1:
+        gov_bbox = extracted.government_warning.bbox
+        if result.government_warning.status != "PASS" and gov_bbox is not None and gov_bbox.height > gov_bbox.width:
+            logger.info("gov warning rotated bbox detected — attempting targeted re-extraction")
+            try:
+                img = Image.open(io.BytesIO(primary_bytes))
+                img_w, img_h = img.size
+                x1 = max(gov_bbox.x, 0)
+                y1 = max(gov_bbox.y, 0)
+                x2 = min(gov_bbox.x + gov_bbox.width, img_w)
+                y2 = min(gov_bbox.y + gov_bbox.height, img_h)
+                cropped = img.crop((x1, y1, x2, y2)).rotate(-90, expand=True)
+                buf = io.BytesIO()
+                cropped.save(buf, format="PNG")
+                reread_text = await vision.extract_warning_text(buf.getvalue())
+                if reread_text:
+                    from app.schemas import WarningExtraction
+                    from app.warning_check import check_government_warning
+                    reread_extraction = WarningExtraction(
+                        verbatim_text=reread_text,
+                        is_all_caps=extracted.government_warning.is_all_caps,
+                        is_bold=extracted.government_warning.is_bold,
+                        is_continuous_paragraph=extracted.government_warning.is_continuous_paragraph,
+                        bbox=gov_bbox,
+                    )
+                    reread_result = check_government_warning(reread_extraction)
+                    status_rank = {"PASS": 0, "LOW_CONFIDENCE": 1, "FLAG": 2}
+                    if status_rank[reread_result.status] < status_rank[result.government_warning.status]:
+                        reread_result.region_crop = result.government_warning.region_crop
+                        result.government_warning = reread_result
+                        logger.info("gov warning re-extraction improved status to %s", reread_result.status)
+            except Exception:
+                logger.warning("gov warning re-extraction failed", exc_info=True)
 
     verification_ms = (time.perf_counter() - verification_started) * 1000
     total_ms = (time.perf_counter() - started) * 1000
     logger.info(
-        "verification complete: original_bytes=%d normalized_bytes=%d "
+        "verification complete: image_count=%d original_bytes=%d "
         "extraction_ms=%.0f verification_ms=%.0f total_ms=%.0f",
+        len(all_image_bytes),
         original_size,
-        normalized_size,
         extraction_ms,
         verification_ms,
         total_ms,
@@ -227,14 +230,14 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
 
 @router.post("/verify", response_model=VerificationResult)
 async def verify(request: VerifyRequest) -> VerificationResult:
-    """Verify a single label image against its application data."""
-    # Single endpoint: reject clearly invalid input with 422 before processing.
-    try:
-        raw = base64.b64decode(request.label_image, validate=True)
-    except binascii.Error:
-        pass  # run_single_verification handles base64 failures as manual_review
-    else:
-        error = _validate_image_bytes(raw)
-        if error:
-            raise HTTPException(status_code=422, detail=error)
+    """Verify one or more label images against application data."""
+    for img_b64 in request.label_images:
+        try:
+            raw = base64.b64decode(img_b64, validate=True)
+        except binascii.Error:
+            pass
+        else:
+            error = _validate_image_bytes(raw)
+            if error:
+                raise HTTPException(status_code=422, detail=error)
     return await run_single_verification(request)
