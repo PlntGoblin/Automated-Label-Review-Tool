@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { ApplicationData, FieldOverride, VerificationResult, VerifyRequest } from './types'
 import { verifyLabel, verifyBatch } from './api'
-import { DEMO_SCENARIOS } from './demo-scenarios'
 import ApplicationForm from './components/ApplicationForm'
 import LabelUpload from './components/LabelUpload'
 import ReviewChecklist from './components/ReviewChecklist'
@@ -18,11 +17,6 @@ const EMPTY_APPLICATION: ApplicationData = {
   country_of_origin: '',
 }
 
-const DEMO_BADGES = [
-  { label: 'PASS', icon: 'check_circle', className: 'bg-green-100 text-green-800' },
-  { label: 'FLAGGED', icon: 'warning', className: 'bg-error-container text-on-error-container' },
-  { label: 'MANUAL REVIEW', icon: 'visibility', className: 'bg-secondary-container text-on-secondary-container' },
-]
 
 export default function App() {
   const [labelBase64, setLabelBase64] = useState<string | null>(null)
@@ -66,13 +60,6 @@ export default function App() {
     setFileName(name)
     setResult(null)
     setError(null)
-  }
-
-  const handleDemo = (scenarioId: string) => {
-    const scenario = DEMO_SCENARIOS.find((s) => s.id === scenarioId)
-    if (!scenario) return
-    setResult(scenario.result)
-    setResultLabel(`Demo: ${scenario.title}`)
   }
 
   const handleBatchSubmit = async (requests: VerifyRequest[], fileNames: string[]) => {
@@ -184,36 +171,6 @@ export default function App() {
         ) : (
           /* ── Landing page ── */
           <>
-            {/* Demo section */}
-            <section>
-              <h1 className="text-display-lg text-primary mb-1">Quick Demo</h1>
-              <p className="text-body-lg text-secondary">Select a scenario to see the automated verification in action.</p>
-            </section>
-
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter max-w-3xl mx-auto" aria-label="Demo scenarios">
-              {DEMO_SCENARIOS.map((scenario, i) => {
-                const badge = DEMO_BADGES[i]!
-                return (
-                  <button
-                    key={scenario.id}
-                    type="button"
-                    onClick={() => handleDemo(scenario.id)}
-                    className="bg-surface-container-lowest border border-outline-variant hover:border-primary transition-all cursor-pointer p-margin-md text-center flex flex-col items-center gap-3"
-                    aria-label={`Load ${scenario.title} demo`}
-                  >
-                    <span className="material-symbols-outlined text-[40px] text-outline">{badge.icon}</span>
-                    <div>
-                      <h3 className="text-headline-sm text-primary mb-1">{scenario.title}</h3>
-                      <p className="text-label-sm text-secondary">{scenario.description}</p>
-                    </div>
-                    <span className={`${badge.className} text-[10px] font-bold px-2 py-1 flex items-center gap-1 uppercase tracking-wider`}>
-                      {badge.label}
-                    </span>
-                  </button>
-                )
-              })}
-            </section>
-
             {/* Upload section */}
             <section className="bg-surface-container-lowest border border-outline-variant">
               {/* Tab headers */}
