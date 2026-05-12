@@ -45,7 +45,8 @@ export default function LabelUpload({ onFilesChanged, currentFileNames }: LabelU
   )
 
   const removeImage = useCallback(
-    (index: number) => {
+    (index: number, e: React.MouseEvent) => {
+      e.stopPropagation()
       setImages((prev) => {
         const next = prev.filter((_, i) => i !== index)
         onFilesChanged(next.map((e) => e.base64), next.map((e) => e.dataUrl), next.map((e) => e.fileName))
@@ -74,21 +75,22 @@ export default function LabelUpload({ onFilesChanged, currentFileNames }: LabelU
     [addFiles],
   )
 
+  const hasImages = images.length > 0
+
   return (
     <div className="flex flex-col gap-2 w-3/5">
       <p className="text-label-bold text-on-surface uppercase tracking-wider">Label Preview</p>
 
       <div className="bg-white border border-outline-variant rounded-sm shadow-[0_4px_24px_rgba(0,0,0,0.10)] p-4 flex flex-col gap-3">
 
-        {/* Drop zone */}
+        {/* Drop zone — always portrait aspect ratio */}
         <div
           className={[
-            'border-2 border-dashed rounded-sm flex flex-col items-center justify-center text-center cursor-pointer select-none transition-colors overflow-hidden',
-            images.length > 0 ? 'py-4' : 'aspect-[3/4] w-full',
+            'border-2 border-dashed rounded-sm cursor-pointer select-none transition-colors overflow-hidden aspect-[3/4] w-full relative',
             dragActive
               ? 'border-primary bg-primary/5'
-              : images.length > 0
-                ? 'border-outline-variant hover:border-primary hover:bg-surface-container'
+              : hasImages
+                ? 'border-green-400 bg-green-50/60'
                 : 'border-outline-variant bg-surface-container-lowest hover:border-primary hover:bg-surface-container',
           ].join(' ')}
           onDragOver={(e) => { e.preventDefault(); setDragActive(true) }}
@@ -110,45 +112,45 @@ export default function LabelUpload({ onFilesChanged, currentFileNames }: LabelU
             aria-hidden="true"
           />
 
-          {images.length > 0 ? (
-            <div className="flex flex-col items-center gap-1 px-4">
-              <span className="material-symbols-outlined text-[28px] text-primary">add_photo_alternate</span>
-              <p className="text-label-sm text-secondary">Drop another image to add it</p>
+          {hasImages ? (
+            /* Image preview grid inside the zone */
+            <div className={`w-full h-full ${images.length === 1 ? '' : 'grid grid-cols-2'}`}>
+              {images.map((img, i) => (
+                <div key={i} className="relative w-full h-full overflow-hidden">
+                  <img
+                    src={img.dataUrl}
+                    alt={img.fileName}
+                    className="w-full h-full object-contain"
+                  />
+                  {/* X button */}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${img.fileName}`}
+                    onClick={(e) => removeImage(i, e)}
+                    className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-2 px-4">
+            <div className="flex flex-col items-center justify-center w-full h-full gap-2 px-4 text-center">
               <span className="material-symbols-outlined text-[96px] text-outline">cloud_upload</span>
               <p className="text-body-md text-on-surface font-semibold">Upload Label Image</p>
               <p className="text-label-sm text-secondary">PNG, JPG, PDF up to 10 MB</p>
             </div>
           )}
+
+          {/* "Add more" hint when images present */}
+          {hasImages && (
+            <div className="absolute bottom-0 left-0 right-0 bg-black/40 py-1 flex items-center justify-center gap-1">
+              <span className="material-symbols-outlined text-white text-[14px]">add_photo_alternate</span>
+              <span className="text-white text-[11px] font-semibold uppercase tracking-wider">Drop to add more</span>
+            </div>
+          )}
         </div>
 
-        {/* Thumbnails */}
-        {images.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {images.map((img, i) => (
-              <div key={i} className="flex items-center gap-2 border border-outline-variant rounded-sm p-1">
-                <img
-                  src={img.dataUrl}
-                  alt={img.fileName}
-                  className="w-10 h-14 object-contain shrink-0 bg-surface-container-lowest"
-                />
-                <p className="text-label-sm text-on-surface truncate flex-1 min-w-0">{img.fileName}</p>
-                <button
-                  type="button"
-                  aria-label={`Remove ${img.fileName}`}
-                  onClick={(e) => { e.stopPropagation(); removeImage(i) }}
-                  className="text-secondary hover:text-error transition-colors shrink-0"
-                >
-                  <span className="material-symbols-outlined text-[18px]">close</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Guardrail note */}
         <p className="text-label-sm text-secondary text-center">
           All images must be labels for the same product
         </p>
