@@ -18,7 +18,7 @@ describe('FieldRow', () => {
   })
 
   it('falls back to raw name for unknown fields', () => {
-    render(<FieldRow name="unknown_field" result={BASE_RESULT} />)
+    render(<FieldRow name="unknown_field" result={BASE_RESULT} onOverride={() => {}} />)
     expect(screen.getByText('unknown_field')).toBeInTheDocument()
   })
 
