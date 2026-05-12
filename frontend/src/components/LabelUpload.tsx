@@ -43,7 +43,7 @@ export default function LabelUpload({ onFileSelected, currentFileName }: LabelUp
   )
 
   const zoneClass = [
-    'border-2 border-dashed flex flex-col items-center justify-center gap-3 min-h-[320px] p-margin-lg text-center cursor-pointer select-none transition-colors',
+    'border-2 border-dashed flex flex-col items-center justify-center gap-3 min-h-[224px] p-margin-lg text-center cursor-pointer select-none transition-colors',
     dragActive
       ? 'border-primary bg-primary/5'
       : currentFileName
