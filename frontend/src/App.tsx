@@ -98,9 +98,25 @@ export default function App() {
             <button type="button" className="text-on-primary hover:bg-white/10 transition-colors p-2 rounded-full" aria-label="Notifications">
               <span className="material-symbols-outlined text-[24px]">notifications</span>
             </button>
-            <button type="button" className="text-on-primary hover:bg-white/10 transition-colors p-2 rounded-full" aria-label="Account">
-              <span className="material-symbols-outlined text-[24px]">account_circle</span>
-            </button>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 20" width="38" height="20" aria-label="United States Government" role="img">
+              {/* 13 stripes */}
+              {Array.from({ length: 13 }).map((_, i) => (
+                <rect key={i} x="0" y={i * (20 / 13)} width="38" height={20 / 13} fill={i % 2 === 0 ? '#B22234' : '#FFFFFF'} />
+              ))}
+              {/* Blue canton */}
+              <rect x="0" y="0" width="15" height={20 * 7 / 13} fill="#3C3B6E" />
+              {/* Stars — 5×4 + 4×5 = 50, simplified as white dots */}
+              {[0,1,2,3,4].map(row =>
+                [0,1,2,3,4,5].map(col => (
+                  <circle key={`${row}-${col}`} cx={1.4 + col * 2.1} cy={1.1 + row * 1.5} r="0.5" fill="#FFFFFF" />
+                ))
+              )}
+              {[0,1,2,3].map(row =>
+                [0,1,2,3,4].map(col => (
+                  <circle key={`b${row}-${col}`} cx={2.45 + col * 2.1} cy={1.85 + row * 1.5} r="0.5" fill="#FFFFFF" />
+                ))
+              )}
+            </svg>
           </div>
         </div>
       </header>
