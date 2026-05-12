@@ -11,6 +11,7 @@ const BASE_WARNING: WarningResult = {
   is_bold: true,
   is_continuous_paragraph: true,
   region_crop: null,
+  note: null,
 }
 
 describe('WarningPanel', () => {

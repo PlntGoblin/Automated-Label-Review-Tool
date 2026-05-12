@@ -146,7 +146,7 @@ export default function BatchResults({ results, fileNames }: BatchResultsProps) 
                             Collapse
                           </button>
                         </div>
-                        <ReviewChecklist result={result} />
+                        <ReviewChecklist result={result} labelDataUrl={null} overrides={{}} onOverride={() => {}} />
                       </div>
                     ) : (
                       <span className="font-mono text-[13px]">{fileName}</span>

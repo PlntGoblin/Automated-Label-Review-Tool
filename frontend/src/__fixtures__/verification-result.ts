@@ -33,6 +33,7 @@ export const PASSING_RESULT: VerificationResult = {
     is_bold: true,
     is_continuous_paragraph: true,
     region_crop: null,
+    note: null,
   },
   summary: { pass_count: 6, flag_count: 0, low_confidence_count: 0, requires_full_manual_review: false },
   manual_review_required: false,
