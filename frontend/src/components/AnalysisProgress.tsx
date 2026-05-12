@@ -4,7 +4,7 @@ interface Step {
   icon: string
   label: string
   sublabel: string
-  doneAt: number // ms after mount to mark as done
+  doneAt: number
 }
 
 const SINGLE_STEPS: Step[] = [
@@ -14,19 +14,35 @@ const SINGLE_STEPS: Step[] = [
   { icon: 'task_alt',       label: 'Finalizing results',         sublabel: 'Building verification report',         doneAt: 6800 },
 ]
 
-const BATCH_STEPS: Step[] = [
-  { icon: 'upload',         label: 'Uploading batch',            sublabel: 'Sending labels to server',             doneAt: 800  },
-  { icon: 'image_search',   label: 'Running AI vision',          sublabel: 'Processing each label in parallel',    doneAt: 5000 },
-  { icon: 'fact_check',     label: 'Comparing application data', sublabel: 'Checking all fields against COLA apps',doneAt: 6500 },
-  { icon: 'task_alt',       label: 'Finalizing results',         sublabel: 'Building batch verification report',   doneAt: 7500 },
-]
-
 interface AnalysisProgressProps {
   mode: 'single' | 'batch'
 }
 
+// Compute a 5-pointed star path centered at (cx, cy)
+function starPath(cx: number, cy: number, R = 13, r = 5.5) {
+  const pts: string[] = []
+  for (let i = 0; i < 10; i++) {
+    const angle = (i * 36 - 90) * (Math.PI / 180)
+    const rad = i % 2 === 0 ? R : r
+    pts.push(`${(cx + rad * Math.cos(angle)).toFixed(2)},${(cy + rad * Math.sin(angle)).toFixed(2)}`)
+  }
+  return `M ${pts.join(' L ')} Z`
+}
+
+// Pentagon positions (counterclockwise from top), orbit radius 38, center 60,58
+const ORBIT = 38
+const CX = 60
+const CY = 58
+const STAR_POSITIONS = [0, 1, 2, 3, 4].map((i) => {
+  const angle = (-90 - i * 72) * (Math.PI / 180)
+  return {
+    cx: +(CX + ORBIT * Math.cos(angle)).toFixed(2),
+    cy: +(CY + ORBIT * Math.sin(angle)).toFixed(2),
+  }
+})
+
 export default function AnalysisProgress({ mode }: AnalysisProgressProps) {
-  const steps = mode === 'batch' ? BATCH_STEPS : SINGLE_STEPS
+  const steps = SINGLE_STEPS
   const [doneCount, setDoneCount] = useState(0)
 
   useEffect(() => {
@@ -39,6 +55,10 @@ export default function AnalysisProgress({ mode }: AnalysisProgressProps) {
 
   const activeIndex = Math.min(doneCount, steps.length - 1)
 
+  // Animation: each star has a staggered delay so they light up counterclockwise
+  const CYCLE = 2.5 // seconds
+  const PER_STAR = CYCLE / 5
+
   return (
     <div
       className="flex flex-col items-center justify-center py-12 px-6 gap-8"
@@ -46,21 +66,32 @@ export default function AnalysisProgress({ mode }: AnalysisProgressProps) {
       aria-live="polite"
       aria-label="Analysis in progress"
     >
-      {/* Spinner */}
-      <div className="relative w-24 h-24">
-        {/* Outer track */}
-        <div className="absolute inset-0 border-[6px] border-outline-variant rounded-full" />
-        {/* Outer spinning arc */}
-        <div className="absolute inset-0 border-[6px] border-transparent border-t-primary rounded-full animate-spin" />
-        {/* Inner counter-spinning arc */}
-        <div className="absolute inset-[10px] border-[4px] border-transparent border-b-primary/40 rounded-full animate-spin" style={{ animationDuration: '0.75s', animationDirection: 'reverse' }} />
-        {/* Center icon */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="material-symbols-outlined text-[28px] text-primary">
-            {steps[activeIndex]?.icon}
-          </span>
-        </div>
-      </div>
+      <style>{`
+        @keyframes starFill {
+          0%   { fill: transparent; }
+          15%  { fill: #FFD700; filter: drop-shadow(0 0 4px #FFD700); }
+          65%  { fill: #FFD700; filter: drop-shadow(0 0 4px #FFD700); }
+          85%, 100% { fill: transparent; filter: none; }
+        }
+      `}</style>
+
+      {/* 5-star formation */}
+      <svg viewBox="0 0 120 116" width="140" height="135" aria-hidden="true">
+        {STAR_POSITIONS.map((pos, i) => (
+          <path
+            key={i}
+            d={starPath(pos.cx, pos.cy)}
+            fill="transparent"
+            stroke="#1B2A4A"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            style={{
+              animation: `starFill ${CYCLE}s ease-in-out infinite`,
+              animationDelay: `${i * PER_STAR}s`,
+            }}
+          />
+        ))}
+      </svg>
 
       {/* Step list */}
       <ol className="space-y-3 w-full max-w-sm">
@@ -69,7 +100,6 @@ export default function AnalysisProgress({ mode }: AnalysisProgressProps) {
           const active = i === activeIndex && doneCount < steps.length
           return (
             <li key={step.label} className="flex items-center gap-3">
-              {/* Status icon */}
               <span
                 className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
                   done
@@ -83,8 +113,6 @@ export default function AnalysisProgress({ mode }: AnalysisProgressProps) {
                   {done ? 'check' : active ? 'radio_button_checked' : 'radio_button_unchecked'}
                 </span>
               </span>
-
-              {/* Label */}
               <div className="min-w-0">
                 <p className={`text-label-bold uppercase tracking-wider transition-colors ${
                   done ? 'text-secondary line-through' : active ? 'text-primary' : 'text-outline'
