@@ -129,7 +129,7 @@ export default function App() {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-headline-md font-headline-md text-primary">
-                {resultLabel ?? 'Results'}
+                Verification Results
               </h2>
               <button
                 type="button"
