@@ -47,11 +47,16 @@ export default function AnalysisProgress({ mode }: AnalysisProgressProps) {
       aria-label="Analysis in progress"
     >
       {/* Spinner */}
-      <div className="relative w-14 h-14">
-        <div className="absolute inset-0 border-4 border-outline-variant rounded-full" />
-        <div className="absolute inset-0 border-4 border-transparent border-t-primary rounded-full animate-spin" />
+      <div className="relative w-24 h-24">
+        {/* Outer track */}
+        <div className="absolute inset-0 border-[6px] border-outline-variant rounded-full" />
+        {/* Outer spinning arc */}
+        <div className="absolute inset-0 border-[6px] border-transparent border-t-primary rounded-full animate-spin" />
+        {/* Inner counter-spinning arc */}
+        <div className="absolute inset-[10px] border-[4px] border-transparent border-b-primary/40 rounded-full animate-spin" style={{ animationDuration: '0.75s', animationDirection: 'reverse' }} />
+        {/* Center icon */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="material-symbols-outlined text-[22px] text-primary">
+          <span className="material-symbols-outlined text-[28px] text-primary">
             {steps[activeIndex]?.icon}
           </span>
         </div>

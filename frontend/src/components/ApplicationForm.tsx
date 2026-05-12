@@ -21,10 +21,7 @@ const PLACEHOLDERS: Record<string, string> = {
 export default function ApplicationForm({ data, onChange, disabled }: ApplicationFormProps) {
   return (
     <fieldset disabled={disabled} className="space-y-3 min-w-0">
-      <legend className="w-full text-center text-2xl font-extrabold text-primary uppercase tracking-widest mb-4">
-        Application Data
-      </legend>
-      {FIELD_ORDER.map((key) => {
+{FIELD_ORDER.map((key) => {
         const multiline = key === 'bottler_name_and_address'
         const inputClass =
           'w-full border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-md text-on-surface focus:outline-none focus:border-primary disabled:opacity-50 transition-colors'
@@ -33,7 +30,7 @@ export default function ApplicationForm({ data, onChange, disabled }: Applicatio
             <div className="flex items-center gap-1 mb-1">
               <label
                 htmlFor={key}
-                className="text-label-bold text-secondary uppercase tracking-wider"
+                className="text-label-bold text-on-surface uppercase tracking-wider"
               >
                 {FIELD_LABELS[key]}
               </label>

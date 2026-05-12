@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import type { ApplicationData, FieldOverride, VerificationResult, VerifyRequest } from './types'
-import { verifyLabel, verifyBatch } from './api'
+import type { ApplicationData, FieldOverride, VerificationResult } from './types'
+import { verifyLabel } from './api'
 import ApplicationForm from './components/ApplicationForm'
 import LabelUpload from './components/LabelUpload'
 import ReviewChecklist from './components/ReviewChecklist'
-import BatchUpload from './components/BatchUpload'
-import BatchResults from './components/BatchResults'
 import AnalysisProgress from './components/AnalysisProgress'
 
 const EMPTY_APPLICATION: ApplicationData = {
@@ -27,10 +25,7 @@ export default function App() {
   const [resultLabel, setResultLabel] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [batchResults, setBatchResults] = useState<VerificationResult[] | null>(null)
-  const [batchFileNames, setBatchFileNames] = useState<string[]>([])
   const [overrides, setOverrides] = useState<Record<string, FieldOverride>>({})
-  const [activeTab, setActiveTab] = useState<'single' | 'batch'>('single')
 
   const canSubmit =
     labelBase64 !== null &&
@@ -62,21 +57,6 @@ export default function App() {
     setError(null)
   }
 
-  const handleBatchSubmit = async (requests: VerifyRequest[], fileNames: string[]) => {
-    setLoading(true)
-    setError(null)
-    setBatchResults(null)
-    try {
-      const res = await verifyBatch(requests)
-      setBatchResults(res)
-      setBatchFileNames(fileNames)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleOverride = (fieldName: string, initials: string, reason: string | null) => {
     setOverrides((prev) => ({
       ...prev,
@@ -92,8 +72,6 @@ export default function App() {
     setResult(null)
     setResultLabel(null)
     setError(null)
-    setBatchResults(null)
-    setBatchFileNames([])
     setOverrides({})
   }
 
@@ -149,116 +127,68 @@ export default function App() {
             <ReviewChecklist result={result} labelDataUrl={labelDataUrl} overrides={overrides} onOverride={handleOverride} />
           </div>
 
-        ) : batchResults ? (
-          /* ── Batch results view ── */
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-headline-md font-headline-md text-primary">
-                Batch Results — {batchResults.length} label{batchResults.length !== 1 ? 's' : ''}
-              </h2>
-              <button
-                type="button"
-                onClick={handleReset}
-                className="text-label-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-                New Verification
-              </button>
-            </div>
-            <BatchResults results={batchResults} fileNames={batchFileNames} />
-          </div>
-
         ) : (
           /* ── Landing page ── */
           <>
-            {/* Upload section */}
-            <section className="bg-surface-container-lowest border border-outline-variant">
-              {/* Tab headers */}
-              <div className="flex border-b border-outline-variant" role="tablist" aria-label="Verification mode">
-                <button
-                  role="tab"
-                  id="tab-single"
-                  aria-selected={activeTab === 'single'}
-                  aria-controls="tabpanel-single"
-                  type="button"
-                  onClick={() => setActiveTab('single')}
-                  className={`px-margin-lg py-margin-md text-label-bold border-b-2 transition-colors ${
-                    activeTab === 'single'
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-secondary hover:text-primary'
-                  }`}
-                >
-                  Single Label
-                </button>
-                <button
-                  role="tab"
-                  id="tab-batch"
-                  aria-selected={activeTab === 'batch'}
-                  aria-controls="tabpanel-batch"
-                  type="button"
-                  onClick={() => setActiveTab('batch')}
-                  className={`px-margin-lg py-margin-md text-label-bold border-b-2 transition-colors ${
-                    activeTab === 'batch'
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-secondary hover:text-primary'
-                  }`}
-                >
-                  Batch Upload
-                </button>
+            {/* Page title + stepper */}
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-extrabold text-on-surface mb-6">New Label Verification</h1>
+              <div className="flex items-center justify-center gap-0 max-w-2xl mx-auto">
+                {/* Step 1 */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-label-bold transition-colors ${fileName ? 'bg-primary text-on-primary' : 'bg-primary text-on-primary'}`}>1</div>
+                  <span className={`text-[11px] font-extrabold uppercase tracking-wider ${fileName ? 'text-on-surface' : 'text-on-surface'}`}>Upload Label</span>
+                </div>
+                {/* Line */}
+                <div className={`h-px flex-1 mx-2 mb-5 transition-colors ${fileName ? 'bg-on-surface' : 'bg-outline-variant'}`} />
+                {/* Step 2 */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-label-bold border-2 transition-colors ${fileName ? 'border-primary bg-surface-container text-primary' : 'border-outline-variant bg-surface-container text-outline'}`}>2</div>
+                  <span className={`text-[11px] font-extrabold uppercase tracking-wider ${fileName ? 'text-on-surface' : 'text-secondary'}`}>Application Data</span>
+                </div>
+                {/* Line */}
+                <div className={`h-px flex-1 mx-2 mb-5 transition-colors ${canSubmit ? 'bg-on-surface' : 'bg-outline-variant'}`} />
+                {/* Step 3 */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-label-bold border-2 transition-colors ${canSubmit ? 'border-primary bg-surface-container text-primary' : 'border-outline-variant bg-surface-container text-outline'}`}>3</div>
+                  <span className={`text-[11px] font-extrabold uppercase tracking-wider ${canSubmit ? 'text-on-surface' : 'text-secondary'}`}>Review &amp; Run</span>
+                </div>
               </div>
+            </div>
 
-              {/* Error */}
-              {error && (
-                <div className="mx-margin-lg mt-margin-md bg-error-container text-on-error-container px-4 py-3 flex items-start gap-2" role="alert">
-                  <span className="material-symbols-outlined text-[18px] mt-0.5 shrink-0">error</span>
-                  <span className="text-label-bold">{error}</span>
+          <section className="bg-surface-container-lowest border border-outline-variant">
+            {/* Error */}
+            {error && (
+              <div className="mx-margin-lg mt-margin-md bg-error-container text-on-error-container px-4 py-3 flex items-start gap-2" role="alert">
+                <span className="material-symbols-outlined text-[18px] mt-0.5 shrink-0">error</span>
+                <span className="text-label-bold">{error}</span>
+              </div>
+            )}
+
+            {loading ? (
+              <AnalysisProgress mode="single" />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 p-margin-lg gap-margin-lg">
+                <div className="flex items-center justify-center h-full">
+                  <LabelUpload onFileSelected={handleFileSelected} currentFileName={fileName} />
                 </div>
-              )}
-
-              {/* Loading */}
-              {loading ? (
-                <AnalysisProgress mode={activeTab} />
-
-              ) : activeTab === 'single' ? (
-                <div
-                  role="tabpanel"
-                  id="tabpanel-single"
-                  aria-labelledby="tab-single"
-                  className="grid grid-cols-1 lg:grid-cols-2 p-margin-lg gap-margin-lg"
-                >
-                  <div className="flex items-center justify-center h-full">
-                    <LabelUpload onFileSelected={handleFileSelected} currentFileName={fileName} />
-                  </div>
-                  <div className="space-y-4">
-                    <ApplicationForm data={application} onChange={setApplication} disabled={loading} />
-                    <div className="pt-margin-md flex justify-end">
-                      <button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={!canSubmit}
-                        className="bg-primary text-on-primary text-label-bold px-12 py-3 uppercase flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <span className="material-symbols-outlined">barcode_reader</span>
-                        Run Automated Review
-                      </button>
-                    </div>
+                <div className="space-y-4">
+                  <ApplicationForm data={application} onChange={setApplication} disabled={loading} />
+                  <div className="pt-margin-md flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={!canSubmit}
+                      className="bg-primary text-on-primary text-label-bold px-12 py-3 uppercase flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <span className="material-symbols-outlined">barcode_reader</span>
+                      Run Automated Review
+                    </button>
                   </div>
                 </div>
-
-              ) : (
-                <div
-                  role="tabpanel"
-                  id="tabpanel-batch"
-                  aria-labelledby="tab-batch"
-                  className="p-margin-lg"
-                >
-                  <p className="text-body-md text-secondary mb-margin-md">
-                    Upload multiple label images and a CSV with application data. Filenames in the CSV must match the uploaded image filenames.
-                  </p>
-                  <BatchUpload onSubmit={handleBatchSubmit} disabled={loading} />
-                </div>
-              )}
-            </section>
+              </div>
+            )}
+          </section>
           </>
         )}
       </main>
