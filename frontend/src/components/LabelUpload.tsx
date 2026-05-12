@@ -116,7 +116,7 @@ export default function LabelUpload({ onFilesChanged, currentFileNames }: LabelU
             /* Image preview grid inside the zone */
             <div className="w-full h-full flex flex-col">
               {images.map((img, i) => (
-                <div key={i} className="relative w-full h-full overflow-hidden">
+                <div key={i} className={`relative w-full overflow-hidden ${i > 0 ? 'border-t-2 border-dashed border-green-400' : ''}`}>
                   <img
                     src={img.dataUrl}
                     alt={img.fileName}
