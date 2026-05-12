@@ -6,12 +6,12 @@ import WarningPanel from './WarningPanel'
 
 interface ReviewChecklistProps {
   result: VerificationResult
-  labelDataUrl: string | null
+  labelDataUrls: string[]
   overrides: Record<string, FieldOverride>
   onOverride: (fieldName: string, initials: string, reason: string | null) => void
 }
 
-export default function ReviewChecklist({ result, labelDataUrl, overrides, onOverride }: ReviewChecklistProps) {
+export default function ReviewChecklist({ result, labelDataUrls, overrides, onOverride }: ReviewChecklistProps) {
   const fieldEntries = FIELD_ORDER.flatMap((name) => {
     const field = result.fields[name]
     return field ? [{ type: 'field' as const, name, field }] : []
@@ -76,14 +76,17 @@ export default function ReviewChecklist({ result, labelDataUrl, overrides, onOve
             )}
           </div>
 
-          {/* Right col: full label image */}
-          <div className="flex items-start justify-center bg-surface-container-low border border-outline-variant">
-            {labelDataUrl ? (
-              <img
-                src={labelDataUrl}
-                alt="Full label image"
-                className="w-full h-full object-contain max-h-[80vh]"
-              />
+          {/* Right col: all label images stacked */}
+          <div className="flex flex-col gap-2 items-stretch bg-surface-container-low border border-outline-variant p-2">
+            {labelDataUrls.length > 0 ? (
+              labelDataUrls.map((url, i) => (
+                <img
+                  key={i}
+                  src={url}
+                  alt={`Label image ${i + 1}`}
+                  className="w-full object-contain max-h-[60vh]"
+                />
+              ))
             ) : (
               <div className="flex flex-col items-center justify-center h-64 gap-2 text-outline">
                 <span className="material-symbols-outlined text-[48px]">image_not_supported</span>

@@ -5,7 +5,7 @@ import { PASSING_RESULT, MANUAL_REVIEW_RESULT } from '../../__fixtures__/verific
 
 describe('ReviewChecklist', () => {
   it('renders all 6 field rows for a complete result', () => {
-    render(<ReviewChecklist result={PASSING_RESULT} labelDataUrl={null} overrides={{}} onOverride={() => {}} />)
+    render(<ReviewChecklist result={PASSING_RESULT} labelDataUrls={[]} overrides={{}} onOverride={() => {}} />)
     expect(screen.getByText('Brand Name')).toBeInTheDocument()
     expect(screen.getByText('Class / Type')).toBeInTheDocument()
     expect(screen.getByText('Alcohol Content')).toBeInTheDocument()
@@ -15,23 +15,23 @@ describe('ReviewChecklist', () => {
   })
 
   it('renders government warning panel', () => {
-    render(<ReviewChecklist result={PASSING_RESULT} labelDataUrl={null} overrides={{}} onOverride={() => {}} />)
+    render(<ReviewChecklist result={PASSING_RESULT} labelDataUrls={[]} overrides={{}} onOverride={() => {}} />)
     expect(screen.getByText('Government Warning')).toBeInTheDocument()
   })
 
   it('shows manual review alert for extraction failures', () => {
-    render(<ReviewChecklist result={MANUAL_REVIEW_RESULT} labelDataUrl={null} overrides={{}} onOverride={() => {}} />)
+    render(<ReviewChecklist result={MANUAL_REVIEW_RESULT} labelDataUrls={[]} overrides={{}} onOverride={() => {}} />)
     expect(screen.getByText('Manual Review Required')).toBeInTheDocument()
     expect(screen.getByText('Vision extraction malformed: invalid JSON')).toBeInTheDocument()
   })
 
   it('renders no field rows when fields is empty (manual review)', () => {
-    render(<ReviewChecklist result={MANUAL_REVIEW_RESULT} labelDataUrl={null} overrides={{}} onOverride={() => {}} />)
+    render(<ReviewChecklist result={MANUAL_REVIEW_RESULT} labelDataUrls={[]} overrides={{}} onOverride={() => {}} />)
     expect(screen.queryByText('Brand Name')).not.toBeInTheDocument()
   })
 
   it('has accessible section label', () => {
-    render(<ReviewChecklist result={PASSING_RESULT} labelDataUrl={null} overrides={{}} onOverride={() => {}} />)
+    render(<ReviewChecklist result={PASSING_RESULT} labelDataUrls={[]} overrides={{}} onOverride={() => {}} />)
     expect(screen.getByRole('region', { name: 'Verification results' })).toBeInTheDocument()
   })
 })

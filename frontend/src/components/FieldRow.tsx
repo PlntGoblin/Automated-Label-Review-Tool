@@ -26,8 +26,16 @@ export default function FieldRow({ name, result, override, onOverride }: FieldRo
     setShowForm(false)
   }
 
+  const cardBg = override
+    ? 'bg-green-50 border-green-200'
+    : result.status === 'PASS'
+      ? 'bg-green-50 border-green-200'
+      : result.status === 'FLAG'
+        ? 'bg-red-50 border-red-200'
+        : 'bg-amber-50 border-amber-200'
+
   return (
-    <div className="bg-surface-container-lowest border border-outline-variant overflow-hidden">
+    <div className={`border overflow-hidden ${cardBg}`}>
       {/* Header */}
       <div className="bg-primary/90 px-3 py-1.5 flex items-center justify-between">
         <span className="text-label-bold text-on-primary font-black uppercase tracking-wider">
@@ -46,12 +54,18 @@ export default function FieldRow({ name, result, override, onOverride }: FieldRo
 
       {/* Values */}
       <div className="px-3 py-2 space-y-1">
-        <p className="text-body-md text-on-surface">
-          <span className="text-label-sm text-secondary uppercase tracking-wider mr-1">Label:</span>
+        <p className="text-body-md text-on-surface flex items-start gap-1">
+          <span className="inline-flex items-center gap-0.5 text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-sm shrink-0 mt-0.5">
+            <span className="material-symbols-outlined text-[11px]">photo_camera</span>
+            On Label
+          </span>
           {result.extracted_value ?? <em className="text-secondary">Not found</em>}
         </p>
-        <p className="text-body-md text-on-surface">
-          <span className="text-label-sm text-secondary uppercase tracking-wider mr-1">Application:</span>
+        <p className="text-body-md text-on-surface flex items-start gap-1">
+          <span className="inline-flex items-center gap-0.5 text-[10px] font-black uppercase tracking-wider bg-surface-container text-secondary px-1.5 py-0.5 rounded-sm shrink-0 mt-0.5">
+            <span className="material-symbols-outlined text-[11px]">description</span>
+            Submitted
+          </span>
           {result.application_value}
         </p>
         {result.note && !override && (

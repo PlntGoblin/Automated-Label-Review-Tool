@@ -140,7 +140,7 @@ export default function App() {
                 New Verification
               </button>
             </div>
-            <ReviewChecklist result={result} labelDataUrl={labelDataUrls[0] ?? null} overrides={overrides} onOverride={handleOverride} />
+            <ReviewChecklist result={result} labelDataUrls={labelDataUrls} overrides={overrides} onOverride={handleOverride} />
           </div>
 
         ) : (
