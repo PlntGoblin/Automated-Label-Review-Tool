@@ -24,6 +24,12 @@ Use the same workflows as above. `ducks_unlimited.json` auto-fills the applicati
 
 Use the same workflows as above. `national_deer_assoc.json` auto-fills the application form for the single-label flow. All three products are included in `batch_sample.csv`.
 
+## Included label: Sonora Brewing Company — Desert Amber
+
+`sonora_desert_amber.jpg` is a single-image label (front and back on one panel) for Sonora Brewing Company's Desert Amber Amber Ale. This is the only beer/malt beverage in the sample set.
+
+Notable: the brand name "Sonora Brewing Company" appears alongside the fantasy name "DESERT AMBER" on the label. The application only lists the brand name — the system is expected to pass because "Sonora Brewing Company" appears as a complete token sequence within the extracted text. The Government Warning is printed rotated 90° on the left panel. All four products are included in `batch_sample.csv`.
+
 ## How to run a batch demo
 
 1. Open the app and click **Batch Upload**
