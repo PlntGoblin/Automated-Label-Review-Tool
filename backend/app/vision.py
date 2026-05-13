@@ -90,6 +90,9 @@ async def _call_model_gemini(images: list[tuple[str, str]]) -> str:
     response = await client.aio.models.generate_content(
         model=settings.gemini_model,
         contents=parts,
+        config=google_types.GenerateContentConfig(
+            thinking_config=google_types.ThinkingConfig(thinking_budget=0),
+        ),
     )
     return response.text
 
