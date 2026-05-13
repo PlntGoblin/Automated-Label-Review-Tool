@@ -1,6 +1,16 @@
 # Sample Labels
 
-Use these files to test the batch verification workflow.
+Use these files to test both the single-label and batch verification workflows.
+
+## Included label: H. Deringer Bourbon
+
+`h_deringer_front.jpg` and `h_deringer_back.jpg` are a real front/back label pair for H. Deringer Kentucky Straight Bourbon Whiskey.
+
+**Single-label workflow:** Drop both images into the upload zone, then drop `h_deringer.json` to auto-fill the application form. The system will process both images together as one product.
+
+**Batch workflow (Manual Entry):** In Batch Upload → Manual Entry, drop both images into Product 1's image zone and fill in the form manually.
+
+**Batch workflow (CSV):** `batch_sample.csv` maps `h_deringer_front.jpg` to the application data. Upload `h_deringer_front.jpg` and the CSV together.
 
 ## How to run a batch demo
 
