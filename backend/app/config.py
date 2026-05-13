@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # Set VISION_PROVIDER=gemini to route extraction through Gemini instead of Claude.
     vision_provider: str = "claude"  # "claude" | "gemini"
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-2.5-flash"
 
     max_batch_size: int = 300
     max_concurrent_requests: int = 10

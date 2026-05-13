@@ -253,12 +253,8 @@ async def extract(images_bytes: list[bytes]) -> ExtractedLabel:
     """
     provider = settings.vision_provider.lower()
 
-    if provider == "gemini":
-        if not settings.gemini_api_key:
-            raise VisionAPIError("GEMINI_API_KEY is not set.")
-    else:
-        if not settings.anthropic_api_key:
-            raise VisionAPIError("ANTHROPIC_API_KEY is not set.")
+    if provider != "gemini" and not settings.anthropic_api_key:
+        raise VisionAPIError("ANTHROPIC_API_KEY is not set.")
 
     cache_key = b"\x00".join(images_bytes)
     cached = extraction_cache.get(cache_key)
@@ -270,9 +266,17 @@ async def extract(images_bytes: list[bytes]) -> ExtractedLabel:
         for b in images_bytes
     ]
 
-    if provider == "gemini":
-        logger.info("vision provider: gemini (%s)", settings.gemini_model)
-        raw_text = await _call_model_gemini(images)
+    if provider == "gemini" and settings.gemini_api_key:
+        try:
+            logger.info("vision provider: gemini (%s)", settings.gemini_model)
+            raw_text = await _call_model_gemini(images)
+        except Exception as gemini_err:
+            logger.warning("gemini failed (%s), falling back to claude", gemini_err)
+            if not settings.anthropic_api_key:
+                raise VisionAPIError("Gemini failed and ANTHROPIC_API_KEY is not set for fallback.") from gemini_err
+            logger.info("vision fallback: claude (%s)", settings.anthropic_model)
+            client = _get_client()
+            raw_text = await _call_with_retry(client, images)
     else:
         logger.info("vision provider: claude (%s)", settings.anthropic_model)
         client = _get_client()
