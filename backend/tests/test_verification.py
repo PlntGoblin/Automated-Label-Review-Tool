@@ -205,6 +205,19 @@ def test_brand_name_low_confidence_sentinel() -> None:
     assert result.status == "LOW_CONFIDENCE"
 
 
+def test_brand_name_fantasy_name_alongside_brand_passes() -> None:
+    """Label includes a fantasy name after the brand — application substring should pass."""
+    result = compare_brand_name("Sonora Brewing Company DESERT AMBER", "Sonora Brewing Company")
+    assert result.status == "PASS"
+
+
+def test_brand_name_truncated_application_flags() -> None:
+    """Truncated application that is a mid-word substring must not pass.
+    'LD RIP VAN WINKLE' must not match inside 'OLD RIP VAN WINKLE'."""
+    result = compare_brand_name("OLD RIP VAN WINKLE", "LD RIP VAN WINKLE")
+    assert result.status == "FLAG"
+
+
 # ---------------------------------------------------------------------------
 # compare_class_or_type
 # ---------------------------------------------------------------------------

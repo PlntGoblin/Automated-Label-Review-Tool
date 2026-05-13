@@ -201,7 +201,12 @@ def compare_brand_name(extracted: str | None, application: str) -> FieldResult:
     norm_app = normalize_for_brand(application)
     if norm_ext == norm_app:
         return _make_field_result("PASS", extracted, application)
-    if norm_app in norm_ext:
+    # Pass when the application brand appears as a complete token sequence within
+    # the extracted text — handles labels where the vision model captures a fantasy
+    # name alongside the brand (e.g. extracted "Sonora Brewing Company DESERT AMBER",
+    # application "Sonora Brewing Company"). Word boundaries prevent a truncated
+    # application like "ld Rip Van Winkle" from matching inside "Old Rip Van Winkle".
+    if re.search(r"\b" + re.escape(norm_app) + r"\b", norm_ext):
         return _make_field_result("PASS", extracted, application)
     return _make_field_result(
         "FLAG", extracted, application, "Brand name does not match application."
