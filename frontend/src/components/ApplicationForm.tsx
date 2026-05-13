@@ -38,11 +38,6 @@ export default function ApplicationForm({ data, onChange, disabled }: Applicatio
                 <span className="text-error text-xs" aria-hidden="true">*</span>
               )}
             </div>
-            {key === 'net_contents' && (
-              <p className="text-xs text-secondary mb-1">
-                Include units — e.g. <span className="font-mono">12 fl oz</span>, <span className="font-mono">355 mL</span>, <span className="font-mono">750 mL</span>, <span className="font-mono">1 L</span>
-              </p>
-            )}
             {multiline ? (
               <textarea
                 id={key}
