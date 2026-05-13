@@ -262,10 +262,9 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
 
         {/* Instructions — floated right of toggle */}
         {inputMode === 'csv' ? (
-          <div className="bg-surface-container px-4 py-3 text-body-md text-secondary space-y-1 flex-1">
-            <p><span className="font-bold text-on-surface">How it works:</span> Upload all label images, then upload a CSV where each row matches one image by filename.</p>
-            <p>The <span className="font-bold text-on-surface">filename</span> column must exactly match the image file name including extension — e.g. <span className="font-mono">jack_daniels.jpg</span>.</p>
-            <p className="text-label-sm">Required columns: <span className="font-mono">filename, brand_name, class_or_type, alcohol_content, net_contents, bottler_name_and_address, country_of_origin</span></p>
+          <div className="bg-surface-container px-4 py-3 text-body-md text-secondary space-y-2 flex-1">
+            <p><span className="font-bold text-on-surface">How it works:</span> Upload your label images and a CSV with one row per label. Each row's <span className="font-bold text-on-surface">filename</span> must match the uploaded image exactly — e.g. <span className="font-mono text-on-surface">jack_daniels.jpg</span>.</p>
+            <p>A sample CSV is available in <span className="font-mono text-on-surface">sample_labels/batch_sample.csv</span> in the repository.</p>
           </div>
         ) : (
           <div className="bg-surface-container px-4 py-3 text-body-md text-secondary flex-1">
