@@ -18,6 +18,12 @@ Use these files to test both the single-label and batch verification workflows.
 
 Use the same workflows as above. `ducks_unlimited.json` auto-fills the application form for the single-label flow. Both products are included in `batch_sample.csv`.
 
+## Included label: National Deer Association Bourbon
+
+`national_deer_assoc_front.jpg` and `national_deer_assoc_back.jpg` are a real front/back label pair for the World Whiskey Society × National Deer Association Kentucky Straight Bourbon Whiskey, Cask Strength, Limited Edition.
+
+Use the same workflows as above. `national_deer_assoc.json` auto-fills the application form for the single-label flow. All three products are included in `batch_sample.csv`.
+
 ## How to run a batch demo
 
 1. Open the app and click **Batch Upload**
