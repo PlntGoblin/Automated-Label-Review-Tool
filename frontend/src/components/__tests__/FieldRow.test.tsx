@@ -69,15 +69,11 @@ describe('FieldRow', () => {
     expect(screen.queryByText(/Brand name does not match/)).not.toBeInTheDocument()
   })
 
-  it('shows crop placeholder when region_crop is null', () => {
-    render(<FieldRow name="brand_name" result={BASE_RESULT} onOverride={() => {}} />)
-    expect(screen.getByText('image_not_supported')).toBeInTheDocument()
-  })
-
-  it('shows crop image when region_crop is present', () => {
+  it('region_crop data is accepted in result without error', () => {
+    // FieldRow receives region_crop but does not render it inline —
+    // crops are displayed in the results panel alongside the label images.
     const result: FieldResult = { ...BASE_RESULT, region_crop: 'data:image/png;base64,AAAA' }
     render(<FieldRow name="brand_name" result={result} onOverride={() => {}} />)
-    const img = screen.getByAltText('Label crop for Brand Name')
-    expect(img).toHaveAttribute('src', 'data:image/png;base64,AAAA')
+    expect(screen.getByText('Brand Name')).toBeInTheDocument()
   })
 })

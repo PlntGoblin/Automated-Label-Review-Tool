@@ -116,23 +116,29 @@ def test_crlf_line_endings_pass() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_lowercase_warning_is_flagged() -> None:
+def test_lowercase_warning_passes_text_check() -> None:
+    """Lowercase canonical text matches case-insensitively — content is correct.
+
+    TTB does not mandate uppercase in 27 CFR § 16.21; prominence is tracked
+    separately via is_all_caps. A fully lowercase warning PASSes the text
+    comparison; the reviewer sees is_all_caps=False as a separate signal.
+    """
     result = check_government_warning(_make_warning(CANONICAL_WARNING_TEXT.lower()))
-    assert result.status == "FLAG"
+    assert result.status == "PASS"
 
 
-def test_missing_parenthetical_numbers_is_flagged() -> None:
-    """Dropping '(1)' or '(2)' makes the text non-canonical."""
+def test_missing_parenthetical_numbers_is_low_confidence() -> None:
+    """Dropping '(1)' or '(2)' gives ≥82% similarity — LOW_CONFIDENCE, not FLAG."""
     truncated = CANONICAL_WARNING_TEXT.replace("(1) ", "").replace("(2) ", "")
     result = check_government_warning(_make_warning(truncated))
-    assert result.status == "FLAG"
+    assert result.status == "LOW_CONFIDENCE"
 
 
-def test_extra_punctuation_is_flagged() -> None:
-    """Adding punctuation that is not in the regulation changes the text."""
+def test_extra_punctuation_is_low_confidence() -> None:
+    """Adding '!!' at the end gives ≥82% similarity — LOW_CONFIDENCE, not FLAG."""
     modified = CANONICAL_WARNING_TEXT + "!!"
     result = check_government_warning(_make_warning(modified))
-    assert result.status == "FLAG"
+    assert result.status == "LOW_CONFIDENCE"
 
 
 def test_truncated_warning_is_flagged() -> None:
@@ -142,11 +148,11 @@ def test_truncated_warning_is_flagged() -> None:
     assert result.status == "FLAG"
 
 
-def test_paraphrased_warning_is_flagged() -> None:
-    """Any wording change — even minor — must FLAG."""
+def test_paraphrased_warning_is_low_confidence() -> None:
+    """Minor wording changes give ≥82% similarity — LOW_CONFIDENCE, reviewer must verify."""
     paraphrased = CANONICAL_WARNING_TEXT.replace("Surgeon General", "Surgeon General's Office")
     result = check_government_warning(_make_warning(paraphrased))
-    assert result.status == "FLAG"
+    assert result.status == "LOW_CONFIDENCE"
 
 
 # ---------------------------------------------------------------------------
@@ -175,8 +181,9 @@ def test_visual_properties_preserved_in_result() -> None:
 
 def test_visual_properties_preserved_on_flag() -> None:
     """Visual property fields are populated even when the text FLAGs."""
+    completely_wrong = "This product may be hazardous to your health."
     result = check_government_warning(
-        _make_warning(CANONICAL_WARNING_TEXT.lower(), is_all_caps=False)
+        _make_warning(completely_wrong, is_all_caps=False)
     )
     assert result.status == "FLAG"
     assert result.is_all_caps is False

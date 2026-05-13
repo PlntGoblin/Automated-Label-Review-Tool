@@ -182,7 +182,11 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
     # bbox coordinates are ambiguous across multiple images.
     if len(all_image_bytes) == 1:
         gov_bbox = extracted.government_warning.bbox
-        if result.government_warning.status != "PASS" and gov_bbox is not None and gov_bbox.height > gov_bbox.width:
+        if (
+            result.government_warning.status != "PASS"
+            and gov_bbox is not None
+            and gov_bbox.height > gov_bbox.width
+        ):
             logger.info("gov warning rotated bbox detected — attempting targeted re-extraction")
             try:
                 img = Image.open(io.BytesIO(primary_bytes))
@@ -207,10 +211,14 @@ async def run_single_verification(request: VerifyRequest) -> VerificationResult:
                     )
                     reread_result = check_government_warning(reread_extraction)
                     status_rank = {"PASS": 0, "LOW_CONFIDENCE": 1, "FLAG": 2}
-                    if status_rank[reread_result.status] < status_rank[result.government_warning.status]:
+                    cur_rank = status_rank[result.government_warning.status]
+                    if status_rank[reread_result.status] < cur_rank:
                         reread_result.region_crop = result.government_warning.region_crop
                         result.government_warning = reread_result
-                        logger.info("gov warning re-extraction improved status to %s", reread_result.status)
+                        logger.info(
+                            "gov warning re-extraction improved status to %s",
+                            reread_result.status,
+                        )
             except Exception:
                 logger.warning("gov warning re-extraction failed", exc_info=True)
 

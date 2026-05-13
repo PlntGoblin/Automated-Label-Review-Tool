@@ -45,7 +45,7 @@ _JPEG_BYTES = b"\xff\xd8\xff\xe0" + b"\x00" * 100
 _JPEG_B64 = base64.b64encode(_JPEG_BYTES).decode()
 
 VALID_REQUEST = {
-    "label_image": _JPEG_B64,
+    "label_images": [_JPEG_B64],
     "application": VALID_APPLICATION,
 }
 
@@ -89,7 +89,7 @@ def test_health_returns_ok() -> None:
 def test_verify_returns_well_formed_result(monkeypatch: pytest.MonkeyPatch) -> None:
     """A valid request with a successful extraction returns 200 with a complete VerificationResult."""
 
-    async def fake_extract(image_bytes: bytes) -> ExtractedLabel:
+    async def fake_extract(images_bytes: list) -> ExtractedLabel:
         return FAKE_EXTRACTION
 
     _patch_extract(monkeypatch, fake_extract)
@@ -125,7 +125,7 @@ def test_verify_returns_manual_review_on_malformed_extraction(
 ) -> None:
     """A MalformedExtractionError surfaces as 200 + manual_review_required: true."""
 
-    async def fake_extract(image_bytes: bytes) -> ExtractedLabel:
+    async def fake_extract(images_bytes: list) -> ExtractedLabel:
         raise MalformedExtractionError("simulated parse failure")
 
     _patch_extract(monkeypatch, fake_extract)
@@ -143,7 +143,7 @@ def test_verify_returns_manual_review_on_vision_api_error(
 ) -> None:
     """A persistent VisionAPIError surfaces as 200 + manual_review_required: true."""
 
-    async def fake_extract(image_bytes: bytes) -> ExtractedLabel:
+    async def fake_extract(images_bytes: list) -> ExtractedLabel:
         raise VisionAPIError("simulated API failure after retry")
 
     _patch_extract(monkeypatch, fake_extract)
@@ -157,10 +157,10 @@ def test_verify_returns_manual_review_on_vision_api_error(
 
 
 def test_verify_returns_manual_review_on_invalid_base64() -> None:
-    """An undecodable label_image returns 200 + manual_review_required: true (not a 500)."""
+    """An undecodable label_images entry returns 200 + manual_review_required: true (not a 500)."""
     response = client.post(
         "/api/verify",
-        json={"label_image": "!@#$%", "application": VALID_APPLICATION},
+        json={"label_images": ["!@#$%"], "application": VALID_APPLICATION},
     )
     assert response.status_code == 200
     body = response.json()
@@ -173,7 +173,7 @@ def test_verify_rejects_missing_application_field() -> None:
     bad_application = {k: v for k, v in VALID_APPLICATION.items() if k != "brand_name"}
     response = client.post(
         "/api/verify",
-        json={"label_image": "Zm9v", "application": bad_application},
+        json={"label_images": ["Zm9v"], "application": bad_application},
     )
     assert response.status_code == 422
 
@@ -225,7 +225,7 @@ def test_verify_rejects_oversized_file() -> None:
     response = client.post(
         "/api/verify",
         json={
-            "label_image": base64.b64encode(huge).decode(),
+            "label_images": [base64.b64encode(huge).decode()],
             "application": VALID_APPLICATION,
         },
     )
@@ -239,7 +239,7 @@ def test_verify_rejects_unsupported_file_type() -> None:
     response = client.post(
         "/api/verify",
         json={
-            "label_image": base64.b64encode(gif_bytes).decode(),
+            "label_images": [base64.b64encode(gif_bytes).decode()],
             "application": VALID_APPLICATION,
         },
     )
@@ -256,7 +256,7 @@ def test_batch_invalid_file_returns_manual_review_not_422(
         "/api/verify/batch",
         json=[
             {
-                "label_image": base64.b64encode(gif_bytes).decode(),
+                "label_images": [base64.b64encode(gif_bytes).decode()],
                 "application": VALID_APPLICATION,
             }
         ],
@@ -309,7 +309,7 @@ def test_retry_succeeds_after_one_transient_error(
     _mock_api_key(monkeypatch)
     calls: list[int] = []
 
-    async def mock_call_model(_client, _media_type, _image_b64):
+    async def mock_call_model(_client, _images):
         calls.append(1)
         if len(calls) == 1:
             raise anthropic.APIConnectionError(request=_dummy_request())
@@ -324,7 +324,7 @@ def test_retry_succeeds_after_one_transient_error(
 
     response = client.post(
         "/api/verify",
-        json={"label_image": _JPEG_B64, "application": VALID_APPLICATION},
+        json={"label_images": [_JPEG_B64], "application": VALID_APPLICATION},
     )
     assert response.status_code == 200
     body = response.json()
@@ -339,7 +339,7 @@ def test_retry_exhausted_returns_manual_review(
     _mock_api_key(monkeypatch)
     calls: list[int] = []
 
-    async def mock_call_model(_client, _media_type, _image_b64):
+    async def mock_call_model(_client, _images):
         calls.append(1)
         raise anthropic.APIConnectionError(request=_dummy_request())
 
@@ -352,7 +352,7 @@ def test_retry_exhausted_returns_manual_review(
 
     response = client.post(
         "/api/verify",
-        json={"label_image": _JPEG_B64, "application": VALID_APPLICATION},
+        json={"label_images": [_JPEG_B64], "application": VALID_APPLICATION},
     )
     assert response.status_code == 200
     body = response.json()

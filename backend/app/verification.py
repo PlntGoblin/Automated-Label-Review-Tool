@@ -294,7 +294,8 @@ def compare_net_contents(extracted: str | None, application: str) -> FieldResult
             "FLAG",
             extracted,
             application,
-            f"Application data is not a valid volume — enter a value like '12 fl oz' or '355 mL', not a percentage.",
+            "Application data is not a valid volume — "
+            "enter a value like '12 fl oz' or '355 mL', not a percentage.",
         )
 
     # ±1.0 mL tolerance covers fl oz ↔ mL conversion rounding (e.g. 355 mL ≈ 12 fl oz).

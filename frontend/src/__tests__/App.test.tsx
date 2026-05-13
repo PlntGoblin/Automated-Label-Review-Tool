@@ -32,7 +32,7 @@ function mockFileReader(base64Result: string) {
 async function setupFileAndFields() {
   mockFileReader('data:image/jpeg;base64,ZmFrZQ==')
 
-  const dropZone = screen.getByRole('button', { name: 'Upload label image' })
+  const dropZone = screen.getByRole('button', { name: 'Upload label images' })
   const fileInput = dropZone.querySelector('input[type="file"]') as HTMLInputElement
   const file = new File(['fake'], 'label.jpg', { type: 'image/jpeg' })
 
@@ -51,60 +51,21 @@ describe('App', () => {
 
   it('renders the header', () => {
     render(<App />)
-    // ALRT appears in both header and footer — check at least one exists
     expect(screen.getAllByText('ALRT').length).toBeGreaterThan(0)
     expect(screen.getByText(/TTB COLA Verification/)).toBeInTheDocument()
   })
 
-  it('renders demo section and verification tabs', () => {
+  it('renders the landing page with stepper', () => {
     render(<App />)
-    expect(screen.getByText('Quick Demo')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /Single Label/i })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /Batch Upload/i })).toBeInTheDocument()
+    expect(screen.getByText('New Label Verification')).toBeInTheDocument()
+    expect(screen.getByText('Upload Label')).toBeInTheDocument()
+    expect(screen.getByText('Application Data')).toBeInTheDocument()
+    expect(screen.getByText('Review & Run')).toBeInTheDocument()
   })
 
-  it('renders all three demo scenario cards', () => {
+  it('renders the upload drop zone', () => {
     render(<App />)
-    expect(screen.getByText('All Fields Pass')).toBeInTheDocument()
-    expect(screen.getByText('Brand & ABV Flagged')).toBeInTheDocument()
-    expect(screen.getByText('Degraded Label')).toBeInTheDocument()
-  })
-
-  it('clicking a demo card shows results', async () => {
-    render(<App />)
-    await userEvent.click(screen.getByText('All Fields Pass'))
-
-    expect(screen.getByText('Verification Results')).toBeInTheDocument()
-    expect(screen.getByText(/Demo: All Fields Pass/)).toBeInTheDocument()
-    // All 6 fields should render
-    expect(screen.getByText('Brand Name')).toBeInTheDocument()
-    expect(screen.getAllByText('Desert Amber').length).toBeGreaterThan(0)
-  })
-
-  it('demo with flags shows flagged badges', async () => {
-    render(<App />)
-    await userEvent.click(screen.getByText('Brand & ABV Flagged'))
-
-    expect(screen.getByText('Verification Results')).toBeInTheDocument()
-    const flags = screen.getAllByText('FLAG')
-    expect(flags.length).toBe(2)
-  })
-
-  it('demo with degraded label shows manual review alert', async () => {
-    render(<App />)
-    await userEvent.click(screen.getByText('Degraded Label'))
-
-    expect(screen.getByText(/Multiple fields could not be read/)).toBeInTheDocument()
-  })
-
-  it('reset from demo returns to landing page with demo cards', async () => {
-    render(<App />)
-    await userEvent.click(screen.getByText('All Fields Pass'))
-    expect(screen.getByText('Verification Results')).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('button', { name: /New Verification/i }))
-    expect(screen.getByText('Quick Demo')).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /Single Label/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Upload label images' })).toBeInTheDocument()
   })
 
   it('disables submit button when no file is selected', () => {
@@ -128,7 +89,6 @@ describe('App', () => {
     await userEvent.click(screen.getByRole('button', { name: /Run Automated Review/i }))
 
     expect(await screen.findByText('Verification Results')).toBeInTheDocument()
-    expect(screen.getByText(/label\.jpg/)).toBeInTheDocument()
   })
 
   it('shows error alert on API failure', async () => {
@@ -151,8 +111,8 @@ describe('App', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /New Verification/i }))
 
-    expect(screen.getByText('Quick Demo')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Upload label image' })).toBeInTheDocument()
+    expect(screen.getByText('New Label Verification')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Upload label images' })).toBeInTheDocument()
   })
 
   it('loading spinner has accessible role', async () => {

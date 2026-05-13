@@ -223,14 +223,18 @@ async def extract_warning_text(image_bytes: bytes) -> str | None:
                     "content": [
                         {
                             "type": "image" if media_type != "application/pdf" else "document",
-                            "source": {"type": "base64", "media_type": media_type, "data": image_b64},
+                            "source": {
+                                "type": "base64",
+                                "media_type": media_type,
+                                "data": image_b64,
+                            },
                         },
                         {
                             "type": "text",
                             "text": (
-                                "Read the government warning text in this image exactly as printed. "
-                                "Return only the verbatim text, nothing else. "
-                                "If the text is unreadable, return the single word: UNREADABLE"
+                                "Read the government warning text in this image verbatim. "
+                                "Return only the exact text, nothing else. "
+                                "If unreadable, return the single word: UNREADABLE"
                             ),
                         },
                     ],
@@ -276,7 +280,9 @@ async def extract(images_bytes: list[bytes]) -> ExtractedLabel:
         except Exception as gemini_err:
             logger.warning("gemini failed (%s), falling back to claude", gemini_err)
             if not settings.anthropic_api_key:
-                raise VisionAPIError("Gemini failed and ANTHROPIC_API_KEY is not set for fallback.") from gemini_err
+                raise VisionAPIError(
+                    "Gemini failed and ANTHROPIC_API_KEY is not set for fallback."
+                ) from gemini_err
             logger.info("vision fallback: claude (%s)", settings.anthropic_model)
             client = _get_client()
             raw_text = await _call_with_retry(client, images)

@@ -8,19 +8,21 @@ from app.canonical import CANONICAL_WARNING_TEXT
 from app.schemas import FieldStatus, WarningExtraction, WarningResult
 
 # Similarity thresholds (SequenceMatcher ratio, 0–1).
-# PASS:             exact match OR ≥0.98 — accounts for OCR whitespace noise
-#                   (e.g. extra spaces around punctuation, narrow-column word wrap)
-#                   where the text is substantively correct.
-# LOW_CONFIDENCE:   0.82–0.97 — text is close but not clean; likely orientation/OCR issue.
-# FLAG:             <0.82 — text is genuinely different or missing.
-_HIGH_SIMILARITY_PASS = 0.98
+# PASS:             exact normalized match (normalization strips OCR whitespace
+#                   artifacts around punctuation, e.g. "WARNING : (1)" → "WARNING: (1)").
+# LOW_CONFIDENCE:   ≥0.82 — text is close; likely an image orientation or OCR read error.
+# FLAG:             <0.82 — text is genuinely different, paraphrased, or missing.
 _LOW_CONFIDENCE_THRESHOLD = 0.82
 
 
 def normalize_for_warning(s: str) -> str:
-    """Unicode NFC normalization, collapse internal whitespace, strip leading/trailing."""
+    """Unicode NFC normalization, collapse whitespace, strip OCR punctuation artifacts."""
     s = unicodedata.normalize("NFC", s)
-    return re.sub(r"\s+", " ", s).strip()
+    s = re.sub(r"\s+", " ", s).strip()
+    # Remove spaces immediately before : ( ) — common OCR artifact when reading
+    # narrow-column text (e.g. "WARNING : (1)" → "WARNING: (1)").
+    s = re.sub(r" +([:()\]])", r"\1", s)
+    return s
 
 
 def _similarity(a: str, b: str) -> float:
@@ -45,7 +47,10 @@ def check_government_warning(extracted: WarningExtraction) -> WarningResult:
             is_bold=extracted.is_bold,
             is_continuous_paragraph=extracted.is_continuous_paragraph,
             region_crop=None,
-            note="Government Warning not found on label. 27 CFR § 16.21 requires it on every container.",
+            note=(
+                "Government Warning not found on label. "
+                "27 CFR § 16.21 requires it on every container."
+            ),
         )
 
     canonical_norm = normalize_for_warning(CANONICAL_WARNING_TEXT)
@@ -53,7 +58,7 @@ def check_government_warning(extracted: WarningExtraction) -> WarningResult:
 
     # Case-insensitive exact match — all-caps labels are legally equivalent to mixed-case.
     ratio = _similarity(extracted_norm, canonical_norm)
-    if extracted_norm.lower() == canonical_norm.lower() or ratio >= _HIGH_SIMILARITY_PASS:
+    if extracted_norm.lower() == canonical_norm.lower():
         status: FieldStatus = "PASS"
         note = None
     else:
@@ -61,13 +66,16 @@ def check_government_warning(extracted: WarningExtraction) -> WarningResult:
             status = "LOW_CONFIDENCE"
             note = (
                 f"Warning text is {ratio:.0%} similar to required 27 CFR § 16.21 language. "
-                "Likely an image orientation or OCR read error — verify manually against the physical label."
+                "Likely an image orientation or OCR read error — "
+                "verify manually against the physical label."
             )
         else:
             status = "FLAG"
             note = (
-                f"Warning text does not match required 27 CFR § 16.21 language ({ratio:.0%} similar). "
-                "The extracted text may be truncated, altered, or unreadable. Manual review required."
+                f"Warning text does not match required 27 CFR § 16.21 language "
+                f"({ratio:.0%} similar). "
+                "The extracted text may be truncated, altered, or unreadable. "
+                "Manual review required."
             )
 
     return WarningResult(

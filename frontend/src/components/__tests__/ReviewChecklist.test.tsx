@@ -16,7 +16,8 @@ describe('ReviewChecklist', () => {
 
   it('renders government warning panel', () => {
     render(<ReviewChecklist result={PASSING_RESULT} labelDataUrls={[]} overrides={{}} onOverride={() => {}} />)
-    expect(screen.getByText('Government Warning')).toBeInTheDocument()
+    // WarningPanel renders in compact mode inside ReviewChecklist — header reads "Gov't Warning"
+    expect(screen.getByText("Gov't Warning")).toBeInTheDocument()
   })
 
   it('shows manual review alert for extraction failures', () => {
