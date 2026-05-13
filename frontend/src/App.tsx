@@ -216,13 +216,6 @@ export default function App() {
             <span className="text-label-bold text-on-surface">ALRT</span>
             <span className="text-label-sm text-secondary">© 2026 TTB Automated Label Review Tool. United States Government.</span>
           </div>
-          <div className="flex flex-wrap justify-center gap-margin-md">
-            {['Privacy Policy', 'Terms of Service', 'Agency Information', 'Accessibility'].map((link) => (
-              <a key={link} href="#" className="text-label-sm text-secondary hover:text-primary hover:underline transition-colors">
-                {link}
-              </a>
-            ))}
-          </div>
         </div>
       </footer>
     </div>
