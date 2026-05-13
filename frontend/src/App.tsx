@@ -124,7 +124,7 @@ export default function App() {
         {result ? (
           /* ── Single results view ── */
           <div>
-            <div className="flex justify-end mb-6">
+            <div className="flex justify-start mb-6">
               <button
                 type="button"
                 onClick={handleReset}
