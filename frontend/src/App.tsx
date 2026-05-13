@@ -34,6 +34,7 @@ export default function App() {
   // Batch verification state
   const [batchResults, setBatchResults] = useState<VerificationResult[] | null>(null)
   const [batchFileNames, setBatchFileNames] = useState<string[]>([])
+  const [batchDataUrls, setBatchDataUrls] = useState<string[][]>([])
   const [batchLoading, setBatchLoading] = useState(false)
   const [batchError, setBatchError] = useState<string | null>(null)
 
@@ -73,7 +74,7 @@ export default function App() {
     }))
   }
 
-  const handleBatchSubmit = async (requests: VerifyRequest[], names: string[]) => {
+  const handleBatchSubmit = async (requests: VerifyRequest[], names: string[], dataUrls: string[][]) => {
     setBatchLoading(true)
     setBatchError(null)
     setBatchResults(null)
@@ -81,6 +82,7 @@ export default function App() {
       const results = await verifyBatch(requests)
       setBatchResults(results)
       setBatchFileNames(names)
+      setBatchDataUrls(dataUrls)
     } catch (e) {
       setBatchError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
@@ -98,6 +100,7 @@ export default function App() {
     setOverrides({})
     setBatchResults(null)
     setBatchFileNames([])
+    setBatchDataUrls([])
     setBatchError(null)
   }
 
@@ -201,15 +204,19 @@ export default function App() {
                 New Batch
               </button>
             </div>
-            <BatchResults results={batchResults} fileNames={batchFileNames} />
+            <BatchResults results={batchResults} fileNames={batchFileNames} labelDataUrls={batchDataUrls} />
           </div>
 
         ) : mode === 'batch' ? (
           /* ── Batch landing ── */
           <>
-            <div className="text-center mb-6">
+            <div className="text-center mb-4">
               <h1 className="text-2xl font-extrabold text-on-surface mb-2">Batch Label Verification</h1>
               <p className="text-secondary text-sm">Upload label images and a CSV with application data to verify up to 300 labels at once.</p>
+            </div>
+            <div className="bg-surface-container px-4 py-3 text-body-md text-secondary space-y-2 mb-4">
+              <p><span className="font-bold text-on-surface">CSV Upload:</span> Upload your label images and a CSV with one row per label. Each row's <span className="font-bold text-on-surface">filename</span> column must match the uploaded image exactly — e.g. <span className="font-mono text-on-surface">jack_daniels.jpg</span>. A sample CSV is in <span className="font-mono text-on-surface">sample_labels/batch_sample.csv</span>.</p>
+              <p><span className="font-bold text-on-surface">Manual Entry:</span> Drop your label images and a form appears for each one — fill in the application data, then verify all at once.</p>
             </div>
             <section className="bg-surface-container-lowest border border-outline-variant p-margin-lg">
               {batchError && (

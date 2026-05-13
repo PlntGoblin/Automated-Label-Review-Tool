@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { ApplicationData, VerifyRequest } from '../types'
 import { FIELD_ORDER } from '../constants'
-import { fileToBase64 } from '../util'
+import { fileToBase64, fileToDataUrl } from '../util'
 import ApplicationForm from './ApplicationForm'
 
 interface BatchUploadProps {
-  onSubmit: (requests: VerifyRequest[], fileNames: string[]) => void
+  onSubmit: (requests: VerifyRequest[], fileNames: string[], dataUrls: string[][]) => void
   disabled: boolean
 }
 
@@ -188,14 +188,16 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
     for (const f of imageFiles) fileMap.set(f.name, f)
     const requests: VerifyRequest[] = []
     const fileNames: string[] = []
+    const dataUrls: string[][] = []
     for (const row of csvRows) {
       const file = fileMap.get(row.filename)
       if (!file) continue
-      const base64 = await fileToBase64(file)
+      const [base64, dataUrl] = await Promise.all([fileToBase64(file), fileToDataUrl(file)])
       requests.push({ label_images: [base64], application: row.application })
       fileNames.push(row.filename)
+      dataUrls.push([dataUrl])
     }
-    onSubmit(requests, fileNames)
+    onSubmit(requests, fileNames, dataUrls)
   }
 
   // ── Manual mode handlers ───────────────────────────────────────────
@@ -236,12 +238,17 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
   const handleSubmitManual = async () => {
     const requests: VerifyRequest[] = []
     const fileNames: string[] = []
+    const dataUrls: string[][] = []
     for (const product of manualProducts) {
-      const base64s = await Promise.all(product.files.map(fileToBase64))
+      const [base64s, urls] = await Promise.all([
+        Promise.all(product.files.map(fileToBase64)),
+        Promise.all(product.files.map(fileToDataUrl)),
+      ])
       requests.push({ label_images: base64s, application: product.form })
       fileNames.push(product.files[0]?.name ?? 'unknown')
+      dataUrls.push(urls)
     }
-    onSubmit(requests, fileNames)
+    onSubmit(requests, fileNames, dataUrls)
   }
 
   // ── Shared styles ──────────────────────────────────────────────────

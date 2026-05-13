@@ -5,6 +5,7 @@ import ReviewChecklist from './ReviewChecklist'
 interface BatchResultsProps {
   results: VerificationResult[]
   fileNames: string[]
+  labelDataUrls: string[][]
 }
 
 type SortKey = 'filename' | 'status' | 'flags'
@@ -15,7 +16,7 @@ function resultSortValue(r: VerificationResult): number {
   return 2
 }
 
-export default function BatchResults({ results, fileNames }: BatchResultsProps) {
+export default function BatchResults({ results, fileNames, labelDataUrls }: BatchResultsProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
   const [sortKey, setSortKey] = useState<SortKey>('status')
   const [sortAsc, setSortAsc] = useState(true)
@@ -146,7 +147,7 @@ export default function BatchResults({ results, fileNames }: BatchResultsProps) 
                             Collapse
                           </button>
                         </div>
-                        <ReviewChecklist result={result} labelDataUrls={[]} overrides={{}} onOverride={() => {}} />
+                        <ReviewChecklist result={result} labelDataUrls={labelDataUrls[originalIndex] ?? []} overrides={{}} onOverride={() => {}} />
                       </div>
                     ) : (
                       <span className="font-mono text-[13px]">{fileName}</span>
