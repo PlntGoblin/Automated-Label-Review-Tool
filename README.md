@@ -14,7 +14,7 @@ The tool is intentionally advisory. It flags mismatches. It doesn't approve or d
 
 The core idea is a two-stage pipeline:
 
-**Stage 1 — Blind Extraction:** A vision model reads the label image and returns what's physically printed on it. It has no idea what the application data says. This separation is intentional — if the model knew the "right answer," it might find it even when the label says something different. ([Why we did this](docs/decisions/ADR-001-blind-extraction.md))
+**Stage 1 — Blind Extraction:** A vision model reads the label image and returns what's physically printed on it. It has no idea what the application data says. This separation is intentional — if the model knew the "right answer," it might find it even when the label says something different. ([Why I did this](docs/decisions/ADR-001-blind-extraction.md))
 
 **Stage 2 — Deterministic Comparison:** Python compares the extracted text against the application data field by field. Brand name, class/type, ABV, net contents, bottler address, country of origin, and the Government Warning are all checked. No AI involvement in this step — just code. ([Why](docs/decisions/ADR-002-two-stage-pipeline.md))
 
@@ -50,7 +50,7 @@ The architecture docs/decisions folder has the reasoning behind the main calls:
 
 - [ADR-001](docs/decisions/ADR-001-blind-extraction.md) — Why the model never sees the application data
 - [ADR-002](docs/decisions/ADR-002-two-stage-pipeline.md) — Vision does the reading, Python does the judging
-- [ADR-003](docs/decisions/ADR-003-model-selection.md) — Why Sonnet, and when we'd switch
+- [ADR-003](docs/decisions/ADR-003-model-selection.md) — Why Sonnet, and when I'd switch
 - [ADR-004](docs/decisions/ADR-004-fuzzy-warning-matching.md) — Fuzzy matching for the Government Warning (and the honest caveat on the threshold)
 - [ADR-005](docs/decisions/ADR-005-human-in-the-loop.md) — Why there's no automatic denial
 
@@ -104,4 +104,4 @@ A few things were left out deliberately — not overlooked:
 - **No COLA system integration.** Application data is entered manually. The obvious next step is pulling it from TTB's existing systems.
 - **Accuracy not validated at scale.** The fuzzy matching threshold for the Government Warning is a starting point, not a validated number. That requires a real labeled corpus.
 
-These are the right next steps, not gaps we missed. See [docs/PRODUCTION.md](docs/PRODUCTION.md) for the full production path.
+These are the right next steps, not gaps I missed. See [docs/PRODUCTION.md](docs/PRODUCTION.md) for the full production path.
