@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import type { ApplicationData, FieldOverride, VerificationResult } from './types'
-import { verifyLabel } from './api'
+import type { ApplicationData, FieldOverride, VerificationResult, VerifyRequest } from './types'
+import { verifyLabel, verifyBatch } from './api'
 import ApplicationForm from './components/ApplicationForm'
 import LabelUpload from './components/LabelUpload'
 import ReviewChecklist from './components/ReviewChecklist'
 import AnalysisProgress from './components/AnalysisProgress'
+import BatchUpload from './components/BatchUpload'
+import BatchResults from './components/BatchResults'
 
 const EMPTY_APPLICATION: ApplicationData = {
   brand_name: '',
@@ -17,6 +19,9 @@ const EMPTY_APPLICATION: ApplicationData = {
 
 
 export default function App() {
+  const [mode, setMode] = useState<'single' | 'batch'>('single')
+
+  // Single verification state
   const [labelBase64s, setLabelBase64s] = useState<string[]>([])
   const [labelDataUrls, setLabelDataUrls] = useState<string[]>([])
   const [fileNames, setFileNames] = useState<string[]>([])
@@ -25,6 +30,12 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [overrides, setOverrides] = useState<Record<string, FieldOverride>>({})
+
+  // Batch verification state
+  const [batchResults, setBatchResults] = useState<VerificationResult[] | null>(null)
+  const [batchFileNames, setBatchFileNames] = useState<string[]>([])
+  const [batchLoading, setBatchLoading] = useState(false)
+  const [batchError, setBatchError] = useState<string | null>(null)
 
   const canSubmit =
     labelBase64s.length > 0 &&
@@ -62,6 +73,21 @@ export default function App() {
     }))
   }
 
+  const handleBatchSubmit = async (requests: VerifyRequest[], names: string[]) => {
+    setBatchLoading(true)
+    setBatchError(null)
+    setBatchResults(null)
+    try {
+      const results = await verifyBatch(requests)
+      setBatchResults(results)
+      setBatchFileNames(names)
+    } catch (e) {
+      setBatchError(e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setBatchLoading(false)
+    }
+  }
+
   const handleReset = () => {
     setLabelBase64s([])
     setLabelDataUrls([])
@@ -70,6 +96,14 @@ export default function App() {
     setResult(null)
     setError(null)
     setOverrides({})
+    setBatchResults(null)
+    setBatchFileNames([])
+    setBatchError(null)
+  }
+
+  const handleModeSwitch = (next: 'single' | 'batch') => {
+    handleReset()
+    setMode(next)
   }
 
   return (
@@ -118,6 +152,26 @@ export default function App() {
       {/* Main */}
       <main className="flex-1 max-w-max-width mx-auto w-full px-margin-lg py-margin-lg space-y-margin-lg">
 
+        {/* Mode toggle — always visible unless showing results */}
+        {!result && !batchResults && (
+          <div className="flex justify-center gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('single')}
+              className={`text-label-bold px-6 py-2 uppercase tracking-wider transition-colors ${mode === 'single' ? 'bg-primary text-on-primary' : 'bg-surface-container text-secondary hover:text-primary'}`}
+            >
+              Single Label
+            </button>
+            <button
+              type="button"
+              onClick={() => handleModeSwitch('batch')}
+              className={`text-label-bold px-6 py-2 uppercase tracking-wider transition-colors ${mode === 'batch' ? 'bg-primary text-on-primary' : 'bg-surface-container text-secondary hover:text-primary'}`}
+            >
+              Batch Upload
+            </button>
+          </div>
+        )}
+
         {result ? (
           /* ── Single results view ── */
           <div>
@@ -134,8 +188,46 @@ export default function App() {
             <ReviewChecklist result={result} labelDataUrls={labelDataUrls} overrides={overrides} onOverride={handleOverride} />
           </div>
 
+        ) : batchResults ? (
+          /* ── Batch results view ── */
+          <div>
+            <div className="flex justify-start mb-6">
+              <button
+                type="button"
+                onClick={handleReset}
+                className="text-label-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                New Batch
+              </button>
+            </div>
+            <BatchResults results={batchResults} fileNames={batchFileNames} />
+          </div>
+
+        ) : mode === 'batch' ? (
+          /* ── Batch landing ── */
+          <>
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-extrabold text-on-surface mb-2">Batch Label Verification</h1>
+              <p className="text-secondary text-sm">Upload label images and a CSV with application data to verify up to 300 labels at once.</p>
+            </div>
+            <section className="bg-surface-container-lowest border border-outline-variant p-margin-lg">
+              {batchError && (
+                <div className="mb-margin-md bg-error-container text-on-error-container px-4 py-3 flex items-start gap-2" role="alert">
+                  <span className="material-symbols-outlined text-[18px] mt-0.5 shrink-0">error</span>
+                  <span className="text-label-bold">{batchError}</span>
+                </div>
+              )}
+              {batchLoading ? (
+                <AnalysisProgress mode="batch" />
+              ) : (
+                <BatchUpload onSubmit={handleBatchSubmit} disabled={batchLoading} />
+              )}
+            </section>
+          </>
+
         ) : (
-          /* ── Landing page ── */
+          /* ── Single landing ── */
           <>
             {/* Page title + stepper */}
             <div className="text-center mb-6">
