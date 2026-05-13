@@ -46,6 +46,9 @@ yarn-error.log*
 # Scratch test images
 Example labels/
 
+# AI session memory (claude-mem internal log)
+AGENTS.md
+
 # Playwright
 playwright-report/
 test-results/
