@@ -12,7 +12,7 @@ The tool is intentionally advisory. It flags mismatches. It doesn't approve or d
 
 The core idea is a two-stage pipeline:
 
-**Stage 1 — Blind Extraction:** Claude reads the label image and returns what's physically printed on it. It has no idea what the application data says. This separation is intentional — if the model knew the "right answer," it might find it even when the label says something different. ([Why we did this](docs/decisions/ADR-001-blind-extraction.md))
+**Stage 1 — Blind Extraction:** A vision model reads the label image and returns what's physically printed on it. It has no idea what the application data says. This separation is intentional — if the model knew the "right answer," it might find it even when the label says something different. ([Why we did this](docs/decisions/ADR-001-blind-extraction.md))
 
 **Stage 2 — Deterministic Comparison:** Python compares the extracted text against the application data field by field. Brand name, class/type, ABV, net contents, bottler address, country of origin, and the Government Warning are all checked. No AI involvement in this step — just code. ([Why](docs/decisions/ADR-002-two-stage-pipeline.md))
 
@@ -27,7 +27,8 @@ Each field comes back as **PASS**, **FLAG**, or **LOW_CONFIDENCE**. A reviewer s
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # add your ANTHROPIC_API_KEY
+cp .env.example .env   # add your ANTHROPIC_API_KEY (required)
+                       # optionally add GEMINI_API_KEY + VISION_PROVIDER=gemini
 uvicorn app.main:app --reload --port 8000
 ```
 
@@ -59,7 +60,7 @@ The architecture docs/decisions folder has the reasoning behind the main calls:
 |---|---|
 | Backend | Python 3.12, FastAPI, Pydantic v2 |
 | Frontend | React 18, Vite, TypeScript |
-| Vision | Claude Sonnet 4.6 (Anthropic API) |
+| Vision | Gemini 2.5 Flash (primary) / Claude Sonnet 4.6 (fallback) |
 | Testing | pytest, Vitest |
 | Deployment | Render |
 
@@ -74,6 +75,21 @@ cd backend && ./.venv/bin/python -m pytest
 # Frontend
 cd frontend && npm test
 ```
+
+---
+
+## Vision provider
+
+ALRT supports two vision providers, switchable via environment variable:
+
+| Provider | Model | Speed | Cost per 1K verifications | Role |
+|---|---|---|---|---|
+| Gemini | `gemini-2.5-flash` | ~2–4s | ~$0.60 | Primary |
+| Claude | `claude-sonnet-4-6` | ~5–8s | ~$18 | Fallback |
+
+Set `VISION_PROVIDER=gemini` and `GEMINI_API_KEY=...` to use Gemini. If Gemini fails for any reason (quota, network, API error), the pipeline automatically retries with Claude. `ANTHROPIC_API_KEY` is required for the fallback to work.
+
+The default without any `VISION_PROVIDER` set is Claude.
 
 ---
 

@@ -77,9 +77,23 @@ The model returns approximate bounding boxes. The backend validates boxes defens
 
 Passing fields keep `region_crop: null`. This keeps the response smaller and avoids spending request-path time encoding crops that the reviewer does not need.
 
+## Vision Provider
+
+ALRT supports two extraction providers behind a single interface in `vision.py`:
+
+| Provider | Model | Config |
+|---|---|---|
+| Gemini (primary) | `gemini-2.5-flash` | `VISION_PROVIDER=gemini` + `GEMINI_API_KEY` |
+| Claude (fallback) | `claude-sonnet-4-6` | `ANTHROPIC_API_KEY` |
+
+If Gemini is configured and fails (quota exhausted, network error, any exception), the pipeline automatically falls back to Claude and logs a warning. `ANTHROPIC_API_KEY` is always required as the fallback safety net.
+
+Gemini 2.5 Flash runs with `thinking_budget=0` — thinking mode is disabled because structured label extraction does not benefit from chain-of-thought reasoning and the latency cost (~25s) is unacceptable for interactive review.
+
 ## Operational Behavior
 
-- Model calls retry once on transient provider/network failures.
+- Gemini failures automatically fall back to Claude Sonnet 4.6.
+- Claude calls retry once on transient provider/network failures.
 - Persistent model failures return `manual_review_required: true`.
 - Malformed model JSON fails closed into manual review.
 - Batch requests are processed concurrently behind a configurable semaphore.
@@ -89,7 +103,7 @@ Passing fields keep `region_crop: null`. This keeps the response smaller and avo
 
 | File | Purpose |
 |---|---|
-| `backend/app/vision.py` | Anthropic vision client and model JSON parsing |
+| `backend/app/vision.py` | Vision provider client (Gemini primary, Claude fallback) and model JSON parsing |
 | `backend/app/verification.py` | Deterministic field comparison and result assembly |
 | `backend/app/warning_check.py` | Government Warning text checks |
 | `backend/app/cropping.py` | Defensive bbox validation and crop encoding |

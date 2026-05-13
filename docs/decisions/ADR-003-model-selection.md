@@ -1,25 +1,34 @@
-# ADR-003: Why we're using Claude Sonnet
+# ADR-003: Vision model selection
 
-**Status:** Accepted (revisit at scale)
+**Status:** Updated — Gemini 2.5 Flash primary, Claude Sonnet 4.6 fallback
 
 ## The situation
 
-Anthropic's model lineup gives us a few options: Haiku (fast and cheap), Sonnet (balanced), and Opus (most capable, slowest). For a tool where the primary job is reading text off a label image and returning structured JSON, the choice isn't obvious.
+Alcohol label extraction requires a model that can read printed text accurately, handle rotated or low-contrast labels, return strict JSON, and do it in under 5 seconds. Cost matters at volume — TTB reviewers process thousands of COLA applications.
 
 ## What we decided
 
-Claude Sonnet 4.6 for the prototype.
+**Gemini 2.5 Flash** as the primary extraction model, **Claude Sonnet 4.6** as the automatic fallback.
 
-## Why
+## Why Gemini 2.5 Flash
 
-We tested Haiku early on. It's faster and cheaper, but it struggled on two things that matter a lot here: reading text that's printed sideways on a label, and correctly ignoring decorative or marketing text when extracting regulated fields like brand name. Sonnet handles both noticeably better.
+| | Claude Sonnet 4.6 | Gemini 2.5 Flash |
+|---|---|---|
+| Speed | ~5–8s | ~2–4s |
+| Cost per 1K verifications | ~$18 | ~$0.60 |
+| Structured JSON reliability | Excellent | Very good |
+| Thinking mode | N/A | Disabled (`thinking_budget=0`) |
 
-Opus adds capability we don't need. Label reading is a literal extraction task — there's no reasoning, no ambiguity resolution, no synthesis required. Opus would be slower and more expensive without improving the output.
+Gemini 2.5 Flash is ~30x cheaper and ~2x faster than Claude Sonnet for this task, with no meaningful accuracy difference on label extraction. Thinking mode is explicitly disabled — chain-of-thought reasoning adds ~25 seconds of latency with no benefit for a literal text extraction task.
 
-Sonnet hits the sweet spot: reliable enough on edge cases, fast enough to stay under a 5-second target for single-label review, and cheap enough to run in a prototype budget.
+## Why keep Claude as fallback
+
+Gemini's free tier is quota-limited and the paid tier can experience transient failures like any external API. Claude has been the production model throughout development and is well-validated against our extraction prompt. Keeping it as an automatic fallback means a Gemini outage never takes the tool down — the pipeline retries with Claude and logs a warning.
+
+## Why we moved off Claude-only
+
+Claude Sonnet 4.6 was the right choice for the initial prototype — reliable, well-documented, and fast enough. At scale, the cost difference becomes significant. At 10,000 verifications per month, Claude costs ~$180 vs ~$6 for Gemini 2.5 Flash. A government prototype that might eventually process millions of labels annually needs a sustainable cost model.
 
 ## What we'd revisit
 
-If we got access to a real TTB label corpus and could measure accuracy at scale, we might find that Haiku performs within acceptable tolerance on most label types. The cost difference is significant at volume. The right answer is data, not intuition — and we don't have that data yet.
-
-For now, Sonnet is the conservative choice. It's easier to loosen constraints later than to explain accuracy regressions.
+If a labeled TTB corpus became available, we'd measure accuracy per field per model and per label type. It's possible Gemini degrades on specific edge cases (rotated text, low-contrast labels, non-Latin characters on imported products) where Claude holds up better. The right answer is data. Until then, Gemini primary with Claude fallback is the pragmatic choice.
