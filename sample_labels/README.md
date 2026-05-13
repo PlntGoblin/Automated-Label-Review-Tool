@@ -12,6 +12,12 @@ Use these files to test both the single-label and batch verification workflows.
 
 **Batch workflow (CSV):** `batch_sample.csv` maps `h_deringer_front.jpg` to the application data. Upload `h_deringer_front.jpg` and the CSV together.
 
+## Included label: Ducks Unlimited Bourbon
+
+`ducks_unlimited_front.jpg` and `ducks_unlimited_back.jpg` are a real front/back label pair for Ducks Unlimited Kentucky Straight Bourbon Whiskey (World Whiskey Society, Limited Edition).
+
+Use the same workflows as above. `ducks_unlimited.json` auto-fills the application form for the single-label flow. Both products are included in `batch_sample.csv`.
+
 ## How to run a batch demo
 
 1. Open the app and click **Batch Upload**
