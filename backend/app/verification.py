@@ -214,14 +214,17 @@ def compare_brand_name(extracted: str | None, application: str) -> FieldResult:
 
 
 def compare_class_or_type(extracted: str | None, application: str) -> FieldResult:
-    """Application's class designation must appear in the extracted text (case-insensitive)."""
+    """Application's class designation must appear in the extracted text (case-insensitive).
+
+    Uses word-boundary matching so 'Ale' does not falsely match inside 'Pale'.
+    """
     if extracted is None:
         return _make_field_result("FLAG", None, application, "Field not found on label.")
     if _is_low_confidence(extracted):
         return _make_field_result("LOW_CONFIDENCE", extracted, application, _LOW_CONF_NOTE)
     ext_lower = extracted.lower()
     app_lower = application.lower()
-    if app_lower in ext_lower:
+    if re.search(r"\b" + re.escape(app_lower) + r"\b", ext_lower):
         return _make_field_result("PASS", extracted, application)
     return _make_field_result(
         "FLAG", extracted, application, "Class/type does not match application."
@@ -315,14 +318,18 @@ def compare_net_contents(extracted: str | None, application: str) -> FieldResult
 
 
 def compare_bottler_name_and_address(extracted: str | None, application: str) -> FieldResult:
-    """Application's bottler text must appear in the extracted text after normalization."""
+    """Application's bottler text must appear in the extracted text after normalization.
+
+    Uses word-boundary matching to prevent partial address matches
+    (e.g. zip '3735' must not match inside '37352').
+    """
     if extracted is None:
         return _make_field_result("FLAG", None, application, "Field not found on label.")
     if _is_low_confidence(extracted):
         return _make_field_result("LOW_CONFIDENCE", extracted, application, _LOW_CONF_NOTE)
     norm_ext = normalize_for_brand(extracted)
     norm_app = normalize_for_brand(application)
-    if norm_app in norm_ext:
+    if re.search(r"\b" + re.escape(norm_app) + r"\b", norm_ext):
         return _make_field_result("PASS", extracted, application)
     return _make_field_result(
         "FLAG", extracted, application, "Bottler name/address not found in label text."

@@ -247,6 +247,12 @@ def test_class_or_type_mismatch_flags() -> None:
     assert result.status == "FLAG"
 
 
+def test_class_or_type_mid_word_substring_flags() -> None:
+    """'Ale' must not pass against a label that only says 'Pale' — mid-word match."""
+    result = compare_class_or_type("Pale", "Ale")
+    assert result.status == "FLAG"
+
+
 def test_class_or_type_none_flags() -> None:
     result = compare_class_or_type(None, "Kentucky Straight Bourbon Whiskey")
     assert result.status == "FLAG"
@@ -389,6 +395,15 @@ def test_bottler_mismatch_flags() -> None:
     result = compare_bottler_name_and_address(
         "Different Distillery, Nashville TN",
         "Old Tom Distillery, Louisville KY",
+    )
+    assert result.status == "FLAG"
+
+
+def test_bottler_truncated_zip_flags() -> None:
+    """Partial zip '3735' must not match inside '37352' — mid-word digit match."""
+    result = compare_bottler_name_and_address(
+        "Old Tom Distillery, Louisville KY 37352",
+        "Old Tom Distillery, Louisville KY 3735",
     )
     assert result.status == "FLAG"
 
