@@ -133,9 +133,18 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
 
   // ── CSV mode handlers ──────────────────────────────────────────────
 
-  const handleImageFiles = useCallback((files: FileList | null) => {
-    if (!files) return
-    setImageFiles(Array.from(files))
+  const handleImageFiles = useCallback((files: FileList | File[] | null) => {
+    if (!files || files.length === 0) return
+    setImageFiles((prev) => {
+      const existing = new Set(prev.map((f) => f.name))
+      const incoming = Array.from(files).filter((f) => !existing.has(f.name))
+      return [...prev, ...incoming]
+    })
+    setValidationErrors([])
+  }, [])
+
+  const removeImageFile = useCallback((index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index))
     setValidationErrors([])
   }, [])
 
@@ -269,31 +278,57 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
             {/* Images */}
             <div>
               <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Label Images</p>
-              <div
-                className={dropZoneClass(imageDragActive)}
-                onClick={() => imageInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setImageDragActive(true) }}
-                onDragLeave={() => setImageDragActive(false)}
-                onDrop={(e) => { e.preventDefault(); setImageDragActive(false); handleImageFiles(e.dataTransfer.files) }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') imageInputRef.current?.click() }}
-                aria-label="Upload label images for batch"
-              >
-                <input ref={imageInputRef} type="file" accept={IMAGE_ACCEPT} multiple onChange={(e) => handleImageFiles(e.target.files)} className="hidden" aria-hidden="true" />
-                <span className="material-symbols-outlined text-[32px] text-outline">photo_library</span>
-                {imageFiles.length > 0 ? (
-                  <>
-                    <p className="text-label-bold text-on-surface">{imageFiles.length} file{imageFiles.length !== 1 ? 's' : ''} selected</p>
-                    <p className="text-label-sm text-secondary">Click or drop to change</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-label-bold text-on-surface">Click or drop images here</p>
-                    <p className="text-label-sm text-secondary">JPEG, PNG, or PDF</p>
-                  </>
-                )}
-              </div>
+              <input ref={imageInputRef} type="file" accept={IMAGE_ACCEPT} multiple onChange={(e) => { handleImageFiles(e.target.files); e.target.value = '' }} className="hidden" aria-hidden="true" />
+              {imageFiles.length > 0 ? (
+                <div
+                  className={`border-2 border-dashed transition-colors ${imageDragActive ? 'border-primary bg-primary/5' : 'border-outline-variant bg-surface-container-lowest'}`}
+                  onDragOver={(e) => { e.preventDefault(); setImageDragActive(true) }}
+                  onDragLeave={() => setImageDragActive(false)}
+                  onDrop={(e) => { e.preventDefault(); setImageDragActive(false); handleImageFiles(e.dataTransfer.files) }}
+                >
+                  {/* Scrollable file list */}
+                  <div className="overflow-y-auto max-h-48">
+                    {imageFiles.map((file, i) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 border-b border-outline-variant last:border-b-0 group">
+                        <span className="text-label-sm text-on-surface font-mono truncate pr-2">{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeImageFile(i)}
+                          aria-label={`Remove ${file.name}`}
+                          className="text-secondary hover:text-error transition-colors shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">close</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Add-more strip */}
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-1 py-2 text-label-sm text-secondary hover:text-primary hover:bg-surface-container transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">add_photo_alternate</span>
+                    Add more images
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className={dropZoneClass(imageDragActive)}
+                  onClick={() => imageInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setImageDragActive(true) }}
+                  onDragLeave={() => setImageDragActive(false)}
+                  onDrop={(e) => { e.preventDefault(); setImageDragActive(false); handleImageFiles(e.dataTransfer.files) }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') imageInputRef.current?.click() }}
+                  aria-label="Upload label images for batch"
+                >
+                  <span className="material-symbols-outlined text-[32px] text-outline">photo_library</span>
+                  <p className="text-label-bold text-on-surface">Click or drop images here</p>
+                  <p className="text-label-sm text-secondary">JPEG, PNG, or PDF</p>
+                </div>
+              )}
             </div>
 
             {/* CSV */}
