@@ -22,7 +22,6 @@ export default function App() {
   const [fileNames, setFileNames] = useState<string[]>([])
   const [application, setApplication] = useState<ApplicationData>(EMPTY_APPLICATION)
   const [result, setResult] = useState<VerificationResult | null>(null)
-  const [resultLabel, setResultLabel] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [overrides, setOverrides] = useState<Record<string, FieldOverride>>({})
@@ -41,7 +40,6 @@ export default function App() {
     try {
       const res = await verifyLabel({ label_images: labelBase64s, application })
       setResult(res)
-      setResultLabel(fileNames[0] ?? null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
@@ -70,7 +68,6 @@ export default function App() {
     setFileNames([])
     setApplication(EMPTY_APPLICATION)
     setResult(null)
-    setResultLabel(null)
     setError(null)
     setOverrides({})
   }

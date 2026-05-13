@@ -16,6 +16,8 @@ import re
 from pathlib import Path
 
 import anthropic
+from google import genai as google_genai
+from google.genai import types as google_types
 from pydantic import ValidationError
 
 from app import cache as extraction_cache
@@ -48,6 +50,8 @@ _PROMPT_PATH = (
 _PROMPT = _PROMPT_PATH.read_text(encoding="utf-8")
 
 _CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?|\n?```\s*$", re.MULTILINE)
+
+# ── Anthropic client ──────────────────────────────────────────────────────────
 _CLIENT: anthropic.AsyncAnthropic | None = None
 _CLIENT_API_KEY: str | None = None
 
@@ -59,6 +63,35 @@ def _get_client() -> anthropic.AsyncAnthropic:
         _CLIENT = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
         _CLIENT_API_KEY = settings.anthropic_api_key
     return _CLIENT
+
+
+# ── Gemini client ─────────────────────────────────────────────────────────────
+_GEMINI_CLIENT: google_genai.Client | None = None
+_GEMINI_API_KEY: str | None = None
+
+
+def _get_gemini_client() -> google_genai.Client:
+    global _GEMINI_CLIENT, _GEMINI_API_KEY
+    if _GEMINI_CLIENT is None or _GEMINI_API_KEY != settings.gemini_api_key:
+        _GEMINI_CLIENT = google_genai.Client(api_key=settings.gemini_api_key)
+        _GEMINI_API_KEY = settings.gemini_api_key
+    return _GEMINI_CLIENT
+
+
+async def _call_model_gemini(images: list[tuple[str, str]]) -> str:
+    """Call Gemini with one or more label images. Returns raw response text."""
+    client = _get_gemini_client()
+    parts: list[google_types.Part] = []
+    for media_type, image_b64 in images:
+        image_bytes = base64.standard_b64decode(image_b64)
+        parts.append(google_types.Part.from_bytes(data=image_bytes, mime_type=media_type))
+    parts.append(google_types.Part.from_text(text=_PROMPT))
+
+    response = await client.aio.models.generate_content(
+        model=settings.gemini_model,
+        contents=parts,
+    )
+    return response.text
 
 
 def _detect_media_type(image_bytes: bytes) -> str:
@@ -218,8 +251,14 @@ async def extract(images_bytes: list[bytes]) -> ExtractedLabel:
         MalformedExtractionError: model output could not be parsed or validated.
         VisionAPIError: model API failed (incl. missing API key).
     """
-    if not settings.anthropic_api_key:
-        raise VisionAPIError("ANTHROPIC_API_KEY is not set.")
+    provider = settings.vision_provider.lower()
+
+    if provider == "gemini":
+        if not settings.gemini_api_key:
+            raise VisionAPIError("GEMINI_API_KEY is not set.")
+    else:
+        if not settings.anthropic_api_key:
+            raise VisionAPIError("ANTHROPIC_API_KEY is not set.")
 
     cache_key = b"\x00".join(images_bytes)
     cached = extraction_cache.get(cache_key)
@@ -231,8 +270,13 @@ async def extract(images_bytes: list[bytes]) -> ExtractedLabel:
         for b in images_bytes
     ]
 
-    client = _get_client()
-    raw_text = await _call_with_retry(client, images)
+    if provider == "gemini":
+        logger.info("vision provider: gemini (%s)", settings.gemini_model)
+        raw_text = await _call_model_gemini(images)
+    else:
+        logger.info("vision provider: claude (%s)", settings.anthropic_model)
+        client = _get_client()
+        raw_text = await _call_with_retry(client, images)
 
     payload = _isolate_json_object(raw_text)
     try:

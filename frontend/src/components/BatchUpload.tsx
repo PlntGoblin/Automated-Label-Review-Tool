@@ -157,7 +157,7 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
       const file = fileMap.get(row.filename)
       if (!file) continue
       const base64 = await fileToBase64(file)
-      requests.push({ label_image: base64, application: row.application })
+      requests.push({ label_images: [base64], application: row.application })
       fileNames.push(row.filename)
     }
 

@@ -14,12 +14,14 @@ class Settings(BaseSettings):
     )
 
     anthropic_api_key: str = ""
-    # Default to Sonnet 4.6 — the current latest in the Claude 4.x vision
-    # family. The PRD originally pinned 4.5 (drafted before 4.6 shipped); the
-    # Phase 1.5 hardening pass updated the default. Override via env var if
-    # accuracy or cost benchmarking favors a different model.
     anthropic_model: str = "claude-sonnet-4-6"
     anthropic_max_tokens: int = 1000
+
+    # Set VISION_PROVIDER=gemini to route extraction through Gemini instead of Claude.
+    vision_provider: str = "claude"  # "claude" | "gemini"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
+
     max_batch_size: int = 300
     max_concurrent_requests: int = 10
 
