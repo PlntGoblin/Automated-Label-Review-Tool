@@ -269,7 +269,7 @@ export default function App() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 p-margin-lg gap-margin-lg">
                 <div className="flex items-center justify-center h-full">
-                  <LabelUpload onFilesChanged={handleFilesChanged} currentFileNames={fileNames} />
+                  <LabelUpload onFilesChanged={handleFilesChanged} onJsonLoaded={setApplication} currentFileNames={fileNames} />
                 </div>
                 <div className="space-y-4">
                   <ApplicationForm data={application} onChange={setApplication} disabled={loading} />

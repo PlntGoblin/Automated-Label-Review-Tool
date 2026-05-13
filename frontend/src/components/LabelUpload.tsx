@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fileToBase64, fileToDataUrl } from '../util'
+import type { ApplicationData } from '../types'
 
 interface ImageEntry {
   base64: string
@@ -9,25 +10,46 @@ interface ImageEntry {
 
 interface LabelUploadProps {
   onFilesChanged: (base64s: string[], dataUrls: string[], fileNames: string[]) => void
+  onJsonLoaded?: (data: ApplicationData) => void
   currentFileNames: string[]
 }
 
-const ACCEPTED = '.jpg,.jpeg,.png,.pdf'
+const ACCEPTED = '.jpg,.jpeg,.png,.pdf,.json'
 
-export default function LabelUpload({ onFilesChanged, currentFileNames }: LabelUploadProps) {
+export default function LabelUpload({ onFilesChanged, onJsonLoaded, currentFileNames }: LabelUploadProps) {
   const [images, setImages] = useState<ImageEntry[]>([])
   const [dragActive, setDragActive] = useState(false)
+  const [jsonFileName, setJsonFileName] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (currentFileNames.length === 0) setImages([])
+    if (currentFileNames.length === 0) {
+      setImages([])
+      setJsonFileName(null)
+    }
   }, [currentFileNames])
 
   const addFiles = useCallback(
     async (files: File[]) => {
+      const imageFiles = files.filter((f) => !f.name.endsWith('.json'))
+      const jsonFiles = files.filter((f) => f.name.endsWith('.json'))
+
+      // Parse JSON files and populate the form
+      for (const file of jsonFiles) {
+        try {
+          const text = await file.text()
+          const data = JSON.parse(text) as ApplicationData
+          setJsonFileName(file.name)
+          onJsonLoaded?.(data)
+        } catch {
+          // Invalid JSON — silently skip
+        }
+      }
+
+      if (imageFiles.length === 0) return
       try {
         const entries = await Promise.all(
-          files.map(async (file) => {
+          imageFiles.map(async (file) => {
             const [base64, dataUrl] = await Promise.all([fileToBase64(file), fileToDataUrl(file)])
             return { base64, dataUrl, fileName: file.name }
           })
@@ -41,7 +63,7 @@ export default function LabelUpload({ onFilesChanged, currentFileNames }: LabelU
         // Silently fail — the user can try again
       }
     },
-    [onFilesChanged],
+    [onFilesChanged, onJsonLoaded],
   )
 
   const removeImage = useCallback(
@@ -138,7 +160,7 @@ export default function LabelUpload({ onFilesChanged, currentFileNames }: LabelU
             <div className="flex flex-col items-center justify-center w-full h-full gap-2 px-4 text-center">
               <span className="material-symbols-outlined text-[96px] text-outline">cloud_upload</span>
               <p className="text-body-md text-on-surface font-semibold">Upload Label Image</p>
-              <p className="text-label-sm text-secondary">PNG, JPG, PDF up to 10 MB</p>
+              <p className="text-label-sm text-secondary">PNG, JPG, PDF — drop a .json to auto-fill form</p>
             </div>
           )}
 
@@ -151,6 +173,12 @@ export default function LabelUpload({ onFilesChanged, currentFileNames }: LabelU
           )}
         </div>
 
+        {jsonFileName && (
+          <p className="text-label-sm text-green-700 text-center flex items-center justify-center gap-1">
+            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+            {jsonFileName} loaded
+          </p>
+        )}
         <p className="text-label-sm text-secondary text-center">
           All images must be labels for the same product
         </p>
