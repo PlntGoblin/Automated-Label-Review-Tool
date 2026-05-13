@@ -240,37 +240,22 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
   return (
     <div className="space-y-margin-md">
 
-      {/* Mode toggle + instructions row */}
-      <div className="flex gap-6 items-start">
-        {/* Toggle buttons */}
-        <div className="flex gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => handleModeSwitch('csv')}
-            className={`text-label-bold px-5 py-2 uppercase tracking-wider transition-colors ${inputMode === 'csv' ? 'bg-primary text-on-primary' : 'bg-surface-container text-secondary hover:text-primary'}`}
-          >
-            CSV Upload
-          </button>
-          <button
-            type="button"
-            onClick={() => handleModeSwitch('manual')}
-            className={`text-label-bold px-5 py-2 uppercase tracking-wider transition-colors ${inputMode === 'manual' ? 'bg-primary text-on-primary' : 'bg-surface-container text-secondary hover:text-primary'}`}
-          >
-            Manual Entry
-          </button>
-        </div>
-
-        {/* Instructions — floated right of toggle */}
-        {inputMode === 'csv' ? (
-          <div className="bg-surface-container px-4 py-3 text-body-md text-secondary space-y-2 flex-1">
-            <p><span className="font-bold text-on-surface">How it works:</span> Upload your label images and a CSV with one row per label. Each row's <span className="font-bold text-on-surface">filename</span> must match the uploaded image exactly — e.g. <span className="font-mono text-on-surface">jack_daniels.jpg</span>.</p>
-            <p>A sample CSV is available in <span className="font-mono text-on-surface">sample_labels/batch_sample.csv</span> in the repository.</p>
-          </div>
-        ) : (
-          <div className="bg-surface-container px-4 py-3 text-body-md text-secondary flex-1">
-            <p><span className="font-bold text-on-surface">How it works:</span> Drop your label images below. A form appears for each one — fill in the application data, then verify all at once.</p>
-          </div>
-        )}
+      {/* Mode toggle */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => handleModeSwitch('csv')}
+          className={`text-label-bold px-5 py-2 uppercase tracking-wider transition-colors ${inputMode === 'csv' ? 'bg-primary text-on-primary' : 'bg-surface-container text-secondary hover:text-primary'}`}
+        >
+          CSV Upload
+        </button>
+        <button
+          type="button"
+          onClick={() => handleModeSwitch('manual')}
+          className={`text-label-bold px-5 py-2 uppercase tracking-wider transition-colors ${inputMode === 'manual' ? 'bg-primary text-on-primary' : 'bg-surface-container text-secondary hover:text-primary'}`}
+        >
+          Manual Entry
+        </button>
       </div>
 
       {inputMode === 'csv' ? (
