@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import type { FieldOverride, VerificationResult } from '../types'
 import { FIELD_ORDER } from '../constants'
 import FieldRow from './FieldRow'
@@ -12,6 +13,15 @@ interface ReviewChecklistProps {
 }
 
 export default function ReviewChecklist({ result, labelDataUrls, overrides, onOverride }: ReviewChecklistProps) {
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!lightboxUrl) return
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightboxUrl(null) }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [lightboxUrl])
+
   const fieldEntries = FIELD_ORDER.flatMap((name) => {
     const field = result.fields[name]
     return field ? [{ type: 'field' as const, name, field }] : []
@@ -41,7 +51,7 @@ export default function ReviewChecklist({ result, labelDataUrls, overrides, onOv
       </div>
 
       <div className="bg-surface-container-lowest border border-outline-variant p-margin-md">
-        <div className="grid gap-6" style={{ gridTemplateColumns: '58% 42%' }}>
+        <div className="grid gap-6" style={{ gridTemplateColumns: 'minmax(0,58fr) minmax(0,42fr)' }}>
 
           {/* Left col: field rows, flags on top, passes on bottom */}
           <div role="list" aria-label="Field comparison results" className="space-y-2 text-sm">
@@ -80,12 +90,22 @@ export default function ReviewChecklist({ result, labelDataUrls, overrides, onOv
           <div className="flex flex-col gap-2 items-stretch bg-surface-container-low border border-outline-variant p-2">
             {labelDataUrls.length > 0 ? (
               labelDataUrls.map((url, i) => (
-                <img
+                <button
                   key={i}
-                  src={url}
-                  alt={`Label image ${i + 1}`}
-                  className="w-full object-contain max-h-[60vh]"
-                />
+                  type="button"
+                  onClick={() => setLightboxUrl(url)}
+                  className="group relative w-full cursor-zoom-in focus:outline-none"
+                  aria-label={`Expand label image ${i + 1}`}
+                >
+                  <img
+                    src={url}
+                    alt={`Label image ${i + 1}`}
+                    className="w-full object-contain max-h-[60vh]"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-end justify-end p-2">
+                    <span className="material-symbols-outlined text-white text-[64px] opacity-0 group-hover:opacity-100 drop-shadow transition-opacity">zoom_in</span>
+                  </div>
+                </button>
               ))
             ) : (
               <div className="flex flex-col items-center justify-center h-64 gap-2 text-outline">
@@ -97,6 +117,32 @@ export default function ReviewChecklist({ result, labelDataUrls, overrides, onOv
 
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 cursor-zoom-out"
+          onClick={() => setLightboxUrl(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Label image fullscreen"
+        >
+          <img
+            src={lightboxUrl}
+            alt="Label fullscreen"
+            className="max-w-full max-h-full object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            type="button"
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 bg-white/10 hover:bg-white/20 text-white rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+            aria-label="Close fullscreen"
+          >
+            <span className="material-symbols-outlined text-[22px]">close</span>
+          </button>
+        </div>
+      )}
     </section>
   )
 }
