@@ -29,6 +29,6 @@ Gemini's free tier is quota-limited and the paid tier can experience transient f
 
 Claude Sonnet 4.6 was the right choice for the initial prototype — reliable, well-documented, and fast enough. At scale, the cost difference becomes significant. At 10,000 verifications per month, Claude costs ~$180 vs ~$6 for Gemini 2.5 Flash. A government prototype that might eventually process millions of labels annually needs a sustainable cost model.
 
-## What we'd revisit
+## What I'd revisit
 
-If a labeled TTB corpus became available, we'd measure accuracy per field per model and per label type. It's possible Gemini degrades on specific edge cases (rotated text, low-contrast labels, non-Latin characters on imported products) where Claude holds up better. The right answer is data. Until then, Gemini primary with Claude fallback is the pragmatic choice.
+If a labeled TTB corpus became available, I'd measure accuracy per field per model and per label type. It's possible Gemini degrades on specific edge cases (rotated text, low-contrast labels, non-Latin characters on imported products) where Claude holds up better. The right answer is data. Until then, Gemini primary with Claude fallback is the pragmatic choice.

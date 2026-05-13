@@ -6,7 +6,7 @@
 
 When a TTB reviewer uploads a label image, they also fill in what the COLA application claims — the brand name, ABV, net contents, and so on. The obvious thing to do is hand the AI both the image and the application data and ask it to check whether they match.
 
-We didn't do that.
+I didn't do that.
 
 ## What we decided
 
@@ -22,4 +22,4 @@ It also makes the system easier to audit. Anyone can read the extraction prompt 
 
 ## What we gave up
 
-A single-pass approach (one AI call that reads and compares) would be simpler to build and slightly faster. We traded that simplicity for auditability and resistance to the most likely failure mode in a compliance context.
+A single-pass approach (one AI call that reads and compares) would be simpler to build and slightly faster. I traded that simplicity for auditability and resistance to the most likely failure mode in a compliance context.
