@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { FieldOverride, VerificationResult } from '../types'
 import { FIELD_ORDER } from '../constants'
 import FieldRow from './FieldRow'
@@ -22,6 +22,21 @@ export default function ReviewChecklist({ result, labelDataUrls, overrides, onOv
     return () => window.removeEventListener('keydown', handleKey)
   }, [lightboxUrl])
 
+  const effectiveSummary = useMemo(() => {
+    const allFields = [
+      ...Object.entries(result.fields).map(([name, f]) => ({ name, status: f.status })),
+      { name: 'government_warning', status: result.government_warning.status },
+    ]
+    let pass_count = 0, flag_count = 0, low_confidence_count = 0
+    for (const { name, status } of allFields) {
+      const effective = overrides[name] ? 'PASS' : status
+      if (effective === 'PASS') pass_count++
+      else if (effective === 'FLAG') flag_count++
+      else low_confidence_count++
+    }
+    return { pass_count, flag_count, low_confidence_count, requires_full_manual_review: result.summary.requires_full_manual_review }
+  }, [result, overrides])
+
   const fieldEntries = FIELD_ORDER.flatMap((name) => {
     const field = result.fields[name]
     return field ? [{ type: 'field' as const, name, field }] : []
@@ -43,7 +58,7 @@ export default function ReviewChecklist({ result, labelDataUrls, overrides, onOv
         <h2 className="text-headline-md font-semibold text-primary shrink-0">Verification Results</h2>
         <div className="w-3/4 ml-auto">
           <SummaryBar
-            summary={result.summary}
+            summary={effectiveSummary}
             manualReviewRequired={result.manual_review_required}
             errorReason={result.error_reason}
           />

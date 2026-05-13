@@ -127,10 +127,7 @@ export default function App() {
         {result ? (
           /* ── Single results view ── */
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-headline-md font-headline-md text-primary">
-                Verification Results
-              </h2>
+            <div className="flex justify-end mb-6">
               <button
                 type="button"
                 onClick={handleReset}
