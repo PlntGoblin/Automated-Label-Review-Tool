@@ -111,6 +111,10 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const csvInputRef = useRef<HTMLInputElement>(null)
 
+  // CSV mode drag state
+  const [imageDragActive, setImageDragActive] = useState(false)
+  const [csvDragActive, setCsvDragActive] = useState(false)
+
   // Manual mode state
   const [manualFiles, setManualFiles] = useState<File[]>([])
   const [manualForms, setManualForms] = useState<ApplicationData[]>([])
@@ -266,8 +270,11 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
             <div>
               <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Label Images</p>
               <div
-                className={dropZoneClass(false)}
+                className={dropZoneClass(imageDragActive)}
                 onClick={() => imageInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setImageDragActive(true) }}
+                onDragLeave={() => setImageDragActive(false)}
+                onDrop={(e) => { e.preventDefault(); setImageDragActive(false); handleImageFiles(e.dataTransfer.files) }}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') imageInputRef.current?.click() }}
@@ -278,11 +285,11 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
                 {imageFiles.length > 0 ? (
                   <>
                     <p className="text-label-bold text-on-surface">{imageFiles.length} file{imageFiles.length !== 1 ? 's' : ''} selected</p>
-                    <p className="text-label-sm text-secondary">Click to change</p>
+                    <p className="text-label-sm text-secondary">Click or drop to change</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-label-bold text-on-surface">Click to select images</p>
+                    <p className="text-label-bold text-on-surface">Click or drop images here</p>
                     <p className="text-label-sm text-secondary">JPEG, PNG, or PDF</p>
                   </>
                 )}
@@ -293,8 +300,11 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
             <div>
               <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Application Data (CSV)</p>
               <div
-                className={dropZoneClass(false)}
+                className={dropZoneClass(csvDragActive)}
                 onClick={() => csvInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setCsvDragActive(true) }}
+                onDragLeave={() => setCsvDragActive(false)}
+                onDrop={(e) => { e.preventDefault(); setCsvDragActive(false); const f = e.dataTransfer.files?.[0]; if (f) handleCSVFile(f) }}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') csvInputRef.current?.click() }}
@@ -305,10 +315,10 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
                 {csvFileName ? (
                   <>
                     <p className="text-label-bold text-on-surface">{csvFileName}</p>
-                    <p className="text-label-sm text-secondary">{csvRows.length} row{csvRows.length !== 1 ? 's' : ''} parsed — click to change</p>
+                    <p className="text-label-sm text-secondary">{csvRows.length} row{csvRows.length !== 1 ? 's' : ''} parsed — click or drop to change</p>
                   </>
                 ) : (
-                  <p className="text-label-bold text-on-surface">Click to select CSV</p>
+                  <p className="text-label-bold text-on-surface">Click or drop CSV here</p>
                 )}
               </div>
             </div>
