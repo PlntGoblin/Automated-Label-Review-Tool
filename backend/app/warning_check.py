@@ -8,9 +8,12 @@ from app.canonical import CANONICAL_WARNING_TEXT
 from app.schemas import FieldStatus, WarningExtraction, WarningResult
 
 # Similarity thresholds (SequenceMatcher ratio, 0–1).
-# PASS:             exact normalized match only.
-# LOW_CONFIDENCE:   ≥0.82 — text is close; likely an OCR/rotation read error, not a real violation.
+# PASS:             exact match OR ≥0.98 — accounts for OCR whitespace noise
+#                   (e.g. extra spaces around punctuation, narrow-column word wrap)
+#                   where the text is substantively correct.
+# LOW_CONFIDENCE:   0.82–0.97 — text is close but not clean; likely orientation/OCR issue.
 # FLAG:             <0.82 — text is genuinely different or missing.
+_HIGH_SIMILARITY_PASS = 0.98
 _LOW_CONFIDENCE_THRESHOLD = 0.82
 
 
@@ -49,11 +52,11 @@ def check_government_warning(extracted: WarningExtraction) -> WarningResult:
     extracted_norm = normalize_for_warning(extracted.verbatim_text)
 
     # Case-insensitive exact match — all-caps labels are legally equivalent to mixed-case.
-    if extracted_norm.lower() == canonical_norm.lower():
+    ratio = _similarity(extracted_norm, canonical_norm)
+    if extracted_norm.lower() == canonical_norm.lower() or ratio >= _HIGH_SIMILARITY_PASS:
         status: FieldStatus = "PASS"
         note = None
     else:
-        ratio = _similarity(extracted_norm, canonical_norm)
         if ratio >= _LOW_CONFIDENCE_THRESHOLD:
             status = "LOW_CONFIDENCE"
             note = (
