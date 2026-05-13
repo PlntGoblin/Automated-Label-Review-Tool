@@ -10,12 +10,12 @@ interface ApplicationFormProps {
 const REQUIRED_FIELDS = new Set(['brand_name', 'class_or_type'])
 
 const PLACEHOLDERS: Record<string, string> = {
-  brand_name:               'e.g. Bison Creek IPA',
-  class_or_type:            'e.g. India Pale Ale',
-  alcohol_content:          'e.g. 6.5% or 6.5% Alc./Vol.',
-  net_contents:             'e.g. 12 fl oz or 355 mL',
-  bottler_name_and_address: 'e.g. Brewed and Bottled by Acme Brewing Co., Denver, CO.',
-  country_of_origin:        'e.g. United States or USA',
+  brand_name:               'e.g. Jack Daniel\'s',
+  class_or_type:            'e.g. Tennessee Whiskey',
+  alcohol_content:          'e.g. 40% Alc./Vol. (80 Proof)',
+  net_contents:             'e.g. 750 mL',
+  bottler_name_and_address: 'e.g. Jack Daniel Distillery, Lynchburg, TN 37352',
+  country_of_origin:        'e.g. United States',
 }
 
 export default function ApplicationForm({ data, onChange, disabled }: ApplicationFormProps) {
