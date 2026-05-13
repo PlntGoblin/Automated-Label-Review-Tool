@@ -116,10 +116,10 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
   const [csvDragActive, setCsvDragActive] = useState(false)
 
   // Manual mode state
-  const [manualFiles, setManualFiles] = useState<File[]>([])
-  const [manualForms, setManualForms] = useState<ApplicationData[]>([])
-  const manualInputRef = useRef<HTMLInputElement>(null)
-  const [manualDragActive, setManualDragActive] = useState(false)
+  interface ManualProduct { files: File[]; form: ApplicationData }
+  const [manualProducts, setManualProducts] = useState<ManualProduct[]>([{ files: [], form: { ...EMPTY_APPLICATION } }])
+  const [manualDragActiveIdx, setManualDragActiveIdx] = useState<number | null>(null)
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const handleModeSwitch = (mode: 'csv' | 'manual') => {
     setInputMode(mode)
@@ -127,8 +127,7 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
     setCsvRows([])
     setCsvFileName(null)
     setValidationErrors([])
-    setManualFiles([])
-    setManualForms([])
+    setManualProducts([{ files: [], form: { ...EMPTY_APPLICATION } }])
   }
 
   // ── CSV mode handlers ──────────────────────────────────────────────
@@ -201,40 +200,46 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
 
   // ── Manual mode handlers ───────────────────────────────────────────
 
-  const handleManualFiles = useCallback((files: File[]) => {
-    if (files.length === 0) return
-    setManualFiles((prev) => {
-      const next = [...prev, ...files]
-      setManualForms((prevForms) => [
-        ...prevForms,
-        ...files.map(() => ({ ...EMPTY_APPLICATION })),
-      ])
-      return next
-    })
+  const addProduct = useCallback(() => {
+    setManualProducts((prev) => [...prev, { files: [], form: { ...EMPTY_APPLICATION } }])
   }, [])
 
-  const removeManualFile = useCallback((index: number) => {
-    setManualFiles((prev) => prev.filter((_, i) => i !== index))
-    setManualForms((prev) => prev.filter((_, i) => i !== index))
+  const removeProduct = useCallback((idx: number) => {
+    setManualProducts((prev) => prev.filter((_, i) => i !== idx))
   }, [])
 
-  const updateManualForm = useCallback((index: number, data: ApplicationData) => {
-    setManualForms((prev) => prev.map((f, i) => (i === index ? data : f)))
+  const addFilesToProduct = useCallback((idx: number, incoming: File[]) => {
+    if (incoming.length === 0) return
+    setManualProducts((prev) => prev.map((p, i) => {
+      if (i !== idx) return p
+      const existing = new Set(p.files.map((f) => f.name))
+      const next = [...p.files, ...incoming.filter((f) => !existing.has(f.name))]
+      return { ...p, files: next }
+    }))
+  }, [])
+
+  const removeFileFromProduct = useCallback((productIdx: number, fileIdx: number) => {
+    setManualProducts((prev) => prev.map((p, i) =>
+      i !== productIdx ? p : { ...p, files: p.files.filter((_, fi) => fi !== fileIdx) }
+    ))
+  }, [])
+
+  const updateProductForm = useCallback((idx: number, data: ApplicationData) => {
+    setManualProducts((prev) => prev.map((p, i) => i !== idx ? p : { ...p, form: data }))
   }, [])
 
   const canSubmitManual =
-    manualFiles.length > 0 &&
-    manualForms.every((f) => f.brand_name.trim() !== '' && f.class_or_type.trim() !== '') &&
+    manualProducts.length > 0 &&
+    manualProducts.every((p) => p.files.length > 0 && p.form.brand_name.trim() !== '' && p.form.class_or_type.trim() !== '') &&
     !disabled
 
   const handleSubmitManual = async () => {
     const requests: VerifyRequest[] = []
     const fileNames: string[] = []
-    for (let i = 0; i < manualFiles.length; i++) {
-      const file = manualFiles[i]!
-      const base64 = await fileToBase64(file)
-      requests.push({ label_images: [base64], application: manualForms[i]! })
-      fileNames.push(file.name)
+    for (const product of manualProducts) {
+      const base64s = await Promise.all(product.files.map(fileToBase64))
+      requests.push({ label_images: base64s, application: product.form })
+      fileNames.push(product.files[0]?.name ?? 'unknown')
     }
     onSubmit(requests, fileNames)
   }
@@ -377,95 +382,127 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
         </>
       ) : (
         <>
-          <input ref={manualInputRef} type="file" accept={IMAGE_ACCEPT} multiple onChange={(e) => { handleManualFiles(Array.from(e.target.files ?? [])); e.target.value = '' }} className="hidden" aria-hidden="true" />
+          {/* One product card per entry */}
+          <div className="space-y-4">
+            {manualProducts.map((product, idx) => (
+              <div key={idx} className="border border-outline-variant bg-surface-container-lowest">
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-margin-lg items-start">
+                {/* Card header */}
+                <div className="flex items-center justify-between px-4 py-2 bg-surface-container border-b border-outline-variant">
+                  <span className="text-label-bold text-on-surface uppercase tracking-wider">
+                    Product {idx + 1}
+                  </span>
+                  {manualProducts.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeProduct(idx)}
+                      className="text-secondary hover:text-error transition-colors text-label-sm flex items-center gap-1"
+                      aria-label={`Remove product ${idx + 1}`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">close</span>
+                      Remove
+                    </button>
+                  )}
+                </div>
 
-            {/* ── Left: image drop zone / file list ── */}
-            <div className="lg:sticky lg:top-24">
-              <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Label Images</p>
-              {manualFiles.length > 0 ? (
-                <div
-                  className={`border-2 border-dashed transition-colors ${manualDragActive ? 'border-primary bg-primary/5' : 'border-outline-variant bg-surface-container-lowest'}`}
-                  onDragOver={(e) => { e.preventDefault(); setManualDragActive(true) }}
-                  onDragLeave={() => setManualDragActive(false)}
-                  onDrop={(e) => { e.preventDefault(); setManualDragActive(false); handleManualFiles(Array.from(e.dataTransfer.files)) }}
-                >
-                  <div className="overflow-y-auto max-h-96">
-                    {manualFiles.map((file, i) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-2 border-b border-outline-variant last:border-b-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-label-bold text-secondary shrink-0">{i + 1}.</span>
-                          <span className="text-label-sm text-on-surface font-mono truncate">{file.name}</span>
+                {/* Card body — 50/50 split */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-margin-lg p-margin-lg">
+
+                  {/* Left: image zone for this product */}
+                  <div>
+                    <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Label Images</p>
+                    <input
+                      ref={(el) => { fileInputRefs.current[idx] = el }}
+                      type="file"
+                      accept={IMAGE_ACCEPT}
+                      multiple
+                      onChange={(e) => { addFilesToProduct(idx, Array.from(e.target.files ?? [])); e.target.value = '' }}
+                      className="hidden"
+                      aria-hidden="true"
+                    />
+                    {product.files.length > 0 ? (
+                      <div
+                        className={`border-2 border-dashed transition-colors ${manualDragActiveIdx === idx ? 'border-primary bg-primary/5' : 'border-outline-variant bg-surface-container-lowest'}`}
+                        onDragOver={(e) => { e.preventDefault(); setManualDragActiveIdx(idx) }}
+                        onDragLeave={() => setManualDragActiveIdx(null)}
+                        onDrop={(e) => { e.preventDefault(); setManualDragActiveIdx(null); addFilesToProduct(idx, Array.from(e.dataTransfer.files)) }}
+                      >
+                        <div className="overflow-y-auto max-h-48">
+                          {product.files.map((file, fi) => (
+                            <div key={fi} className="flex items-center justify-between px-3 py-2 border-b border-outline-variant last:border-b-0">
+                              <span className="text-label-sm text-on-surface font-mono truncate pr-2">{file.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeFileFromProduct(idx, fi)}
+                                aria-label={`Remove ${file.name}`}
+                                className="text-secondary hover:text-error transition-colors shrink-0"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">close</span>
+                              </button>
+                            </div>
+                          ))}
                         </div>
                         <button
                           type="button"
-                          onClick={() => removeManualFile(i)}
-                          aria-label={`Remove ${file.name}`}
-                          className="text-secondary hover:text-error transition-colors shrink-0 ml-2"
+                          onClick={() => fileInputRefs.current[idx]?.click()}
+                          className="w-full flex items-center justify-center gap-1 py-2 text-label-sm text-secondary hover:text-primary hover:bg-surface-container transition-colors"
                         >
-                          <span className="material-symbols-outlined text-[16px]">close</span>
+                          <span className="material-symbols-outlined text-[16px]">add_photo_alternate</span>
+                          Add more images
                         </button>
                       </div>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => manualInputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-1 py-2 text-label-sm text-secondary hover:text-primary hover:bg-surface-container transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[16px]">add_photo_alternate</span>
-                    Add more images
-                  </button>
-                </div>
-              ) : (
-                <div
-                  className={dropZoneClass(manualDragActive)}
-                  onClick={() => manualInputRef.current?.click()}
-                  onDragOver={(e) => { e.preventDefault(); setManualDragActive(true) }}
-                  onDragLeave={() => setManualDragActive(false)}
-                  onDrop={(e) => { e.preventDefault(); setManualDragActive(false); handleManualFiles(Array.from(e.dataTransfer.files)) }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') manualInputRef.current?.click() }}
-                  aria-label="Upload label images for manual entry"
-                >
-                  <span className="material-symbols-outlined text-[32px] text-outline">photo_library</span>
-                  <p className="text-label-bold text-on-surface">Click or drop images here</p>
-                  <p className="text-label-sm text-secondary">JPEG, PNG, or PDF</p>
-                </div>
-              )}
-            </div>
-
-            {/* ── Right: one form per image ── */}
-            <div className="space-y-4">
-              {manualFiles.length === 0 ? (
-                <div className="flex items-center justify-center h-32 border border-dashed border-outline-variant text-secondary text-label-sm">
-                  Drop images on the left to begin
-                </div>
-              ) : (
-                <>
-                  {manualFiles.map((file, i) => (
-                    <div key={i} className="border border-outline-variant bg-surface-container-lowest">
-                      <div className="flex items-center gap-2 px-4 py-2 bg-surface-container border-b border-outline-variant">
-                        <span className="text-label-bold text-secondary shrink-0">{i + 1}.</span>
-                        <span className="text-label-bold text-on-surface font-mono text-[13px] truncate">{file.name}</span>
+                    ) : (
+                      <div
+                        className={dropZoneClass(manualDragActiveIdx === idx)}
+                        onClick={() => fileInputRefs.current[idx]?.click()}
+                        onDragOver={(e) => { e.preventDefault(); setManualDragActiveIdx(idx) }}
+                        onDragLeave={() => setManualDragActiveIdx(null)}
+                        onDrop={(e) => { e.preventDefault(); setManualDragActiveIdx(null); addFilesToProduct(idx, Array.from(e.dataTransfer.files)) }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRefs.current[idx]?.click() }}
+                        aria-label={`Upload images for product ${idx + 1}`}
+                      >
+                        <span className="material-symbols-outlined text-[32px] text-outline">photo_library</span>
+                        <p className="text-label-bold text-on-surface">Click or drop images here</p>
+                        <p className="text-label-sm text-secondary">JPEG, PNG, or PDF</p>
                       </div>
-                      <div className="p-4">
-                        <ApplicationForm data={manualForms[i]!} onChange={(data) => updateManualForm(i, data)} disabled={disabled} />
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex justify-end pt-2">
-                    <button type="button" onClick={handleSubmitManual} disabled={!canSubmitManual} className="bg-primary text-on-primary text-label-bold px-12 py-3 uppercase flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                      <span className="material-symbols-outlined">batch_prediction</span>
-                      Verify {manualFiles.length} Label{manualFiles.length !== 1 ? 's' : ''}
-                    </button>
+                    )}
                   </div>
-                </>
-              )}
-            </div>
 
+                  {/* Right: application form for this product */}
+                  <div>
+                    <ApplicationForm
+                      data={product.form}
+                      onChange={(data) => updateProductForm(idx, data)}
+                      disabled={disabled}
+                    />
+                  </div>
+
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add product + Verify row */}
+          <div className="flex items-center justify-between pt-2">
+            <button
+              type="button"
+              onClick={addProduct}
+              className="text-label-bold text-secondary hover:text-primary flex items-center gap-1 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Add Another Product
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmitManual}
+              disabled={!canSubmitManual}
+              className="bg-primary text-on-primary text-label-bold px-12 py-3 uppercase flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined">batch_prediction</span>
+              Verify {manualProducts.length} Product{manualProducts.length !== 1 ? 's' : ''}
+            </button>
           </div>
         </>
       )}
