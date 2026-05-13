@@ -80,9 +80,9 @@ describe('BatchUpload', () => {
     expect(screen.getByRole('button', { name: /Verify Batch/i })).toBeDisabled()
   })
 
-  it('shows CSV column requirements in placeholder', () => {
+  it('shows CSV upload zone in default mode', () => {
     render(<BatchUpload onSubmit={mockSubmit} disabled={false} />)
-    expect(screen.getByText(/Columns:/)).toBeInTheDocument()
+    expect(screen.getByText(/Application Data \(CSV\)/i)).toBeInTheDocument()
   })
 
   it('upload zones are keyboard accessible', async () => {
