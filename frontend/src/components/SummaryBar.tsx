@@ -33,15 +33,15 @@ export default function SummaryBar({ summary, manualReviewRequired, errorReason 
       )}
 
       <div
-        className="grid grid-cols-3 bg-surface-container-lowest border border-outline-variant"
+        className="grid grid-cols-3 bg-surface-container-lowest border-2 border-outline-variant"
         role="status"
         aria-label="Verification summary"
       >
-        <div className="flex flex-col items-center justify-center py-4 px-3 border-r border-outline-variant">
+        <div className="flex flex-col items-center justify-center py-4 px-3 border-r-2 border-outline-variant">
           <span className="text-[28px] font-black text-green-700">{summary.pass_count}</span>
           <span className="text-label-sm text-secondary uppercase tracking-wider mt-1">Passed</span>
         </div>
-        <div className="flex flex-col items-center justify-center py-4 px-3 border-r border-outline-variant">
+        <div className="flex flex-col items-center justify-center py-4 px-3 border-r-2 border-outline-variant">
           <span className={`text-[28px] font-black ${summary.flag_count > 0 ? 'text-error' : 'text-on-surface'}`}>
             {summary.flag_count}
           </span>
