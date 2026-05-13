@@ -377,59 +377,96 @@ export default function BatchUpload({ onSubmit, disabled }: BatchUploadProps) {
         </>
       ) : (
         <>
-          {/* Image drop zone */}
-          <div>
-            <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Label Images</p>
-            <div
-              className={dropZoneClass(manualDragActive)}
-              onClick={() => manualInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setManualDragActive(true) }}
-              onDragLeave={() => setManualDragActive(false)}
-              onDrop={(e) => { e.preventDefault(); setManualDragActive(false); handleManualFiles(Array.from(e.dataTransfer.files)) }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') manualInputRef.current?.click() }}
-              aria-label="Upload label images for manual entry"
-            >
-              <input ref={manualInputRef} type="file" accept={IMAGE_ACCEPT} multiple onChange={(e) => { handleManualFiles(Array.from(e.target.files ?? [])); e.target.value = '' }} className="hidden" aria-hidden="true" />
-              <span className="material-symbols-outlined text-[32px] text-outline">photo_library</span>
+          <input ref={manualInputRef} type="file" accept={IMAGE_ACCEPT} multiple onChange={(e) => { handleManualFiles(Array.from(e.target.files ?? [])); e.target.value = '' }} className="hidden" aria-hidden="true" />
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-margin-lg items-start">
+
+            {/* ── Left: image drop zone / file list ── */}
+            <div className="lg:sticky lg:top-24">
+              <p className="text-label-bold text-secondary uppercase tracking-wider mb-2">Label Images</p>
               {manualFiles.length > 0 ? (
-                <p className="text-label-bold text-on-surface">{manualFiles.length} image{manualFiles.length !== 1 ? 's' : ''} — drop more to add</p>
+                <div
+                  className={`border-2 border-dashed transition-colors ${manualDragActive ? 'border-primary bg-primary/5' : 'border-outline-variant bg-surface-container-lowest'}`}
+                  onDragOver={(e) => { e.preventDefault(); setManualDragActive(true) }}
+                  onDragLeave={() => setManualDragActive(false)}
+                  onDrop={(e) => { e.preventDefault(); setManualDragActive(false); handleManualFiles(Array.from(e.dataTransfer.files)) }}
+                >
+                  <div className="overflow-y-auto max-h-96">
+                    {manualFiles.map((file, i) => (
+                      <div key={i} className="flex items-center justify-between px-3 py-2 border-b border-outline-variant last:border-b-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-label-bold text-secondary shrink-0">{i + 1}.</span>
+                          <span className="text-label-sm text-on-surface font-mono truncate">{file.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeManualFile(i)}
+                          aria-label={`Remove ${file.name}`}
+                          className="text-secondary hover:text-error transition-colors shrink-0 ml-2"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">close</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => manualInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-1 py-2 text-label-sm text-secondary hover:text-primary hover:bg-surface-container transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">add_photo_alternate</span>
+                    Add more images
+                  </button>
+                </div>
               ) : (
-                <p className="text-label-bold text-on-surface">Click or drop images here</p>
+                <div
+                  className={dropZoneClass(manualDragActive)}
+                  onClick={() => manualInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setManualDragActive(true) }}
+                  onDragLeave={() => setManualDragActive(false)}
+                  onDrop={(e) => { e.preventDefault(); setManualDragActive(false); handleManualFiles(Array.from(e.dataTransfer.files)) }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') manualInputRef.current?.click() }}
+                  aria-label="Upload label images for manual entry"
+                >
+                  <span className="material-symbols-outlined text-[32px] text-outline">photo_library</span>
+                  <p className="text-label-bold text-on-surface">Click or drop images here</p>
+                  <p className="text-label-sm text-secondary">JPEG, PNG, or PDF</p>
+                </div>
               )}
             </div>
+
+            {/* ── Right: one form per image ── */}
+            <div className="space-y-4">
+              {manualFiles.length === 0 ? (
+                <div className="flex items-center justify-center h-32 border border-dashed border-outline-variant text-secondary text-label-sm">
+                  Drop images on the left to begin
+                </div>
+              ) : (
+                <>
+                  {manualFiles.map((file, i) => (
+                    <div key={i} className="border border-outline-variant bg-surface-container-lowest">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-surface-container border-b border-outline-variant">
+                        <span className="text-label-bold text-secondary shrink-0">{i + 1}.</span>
+                        <span className="text-label-bold text-on-surface font-mono text-[13px] truncate">{file.name}</span>
+                      </div>
+                      <div className="p-4">
+                        <ApplicationForm data={manualForms[i]!} onChange={(data) => updateManualForm(i, data)} disabled={disabled} />
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-end pt-2">
+                    <button type="button" onClick={handleSubmitManual} disabled={!canSubmitManual} className="bg-primary text-on-primary text-label-bold px-12 py-3 uppercase flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                      <span className="material-symbols-outlined">batch_prediction</span>
+                      Verify {manualFiles.length} Label{manualFiles.length !== 1 ? 's' : ''}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
           </div>
-
-          {/* One form card per image */}
-          {manualFiles.map((file, i) => (
-            <div key={i} className="border border-outline-variant bg-surface-container-lowest">
-              <div className="flex items-center justify-between px-4 py-2 bg-surface-container border-b border-outline-variant">
-                <span className="text-label-bold text-on-surface font-mono text-[13px]">{file.name}</span>
-                <button
-                  type="button"
-                  onClick={() => removeManualFile(i)}
-                  className="text-secondary hover:text-error transition-colors text-label-sm flex items-center gap-1"
-                  aria-label={`Remove ${file.name}`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">close</span>
-                  Remove
-                </button>
-              </div>
-              <div className="p-4">
-                <ApplicationForm data={manualForms[i]!} onChange={(data) => updateManualForm(i, data)} disabled={disabled} />
-              </div>
-            </div>
-          ))}
-
-          {manualFiles.length > 0 && (
-            <div className="flex justify-end">
-              <button type="button" onClick={handleSubmitManual} disabled={!canSubmitManual} className="bg-primary text-on-primary text-label-bold px-12 py-3 uppercase flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                <span className="material-symbols-outlined">batch_prediction</span>
-                Verify {manualFiles.length} Label{manualFiles.length !== 1 ? 's' : ''}
-              </button>
-            </div>
-          )}
         </>
       )}
     </div>
