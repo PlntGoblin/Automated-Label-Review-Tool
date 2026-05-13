@@ -92,9 +92,6 @@ export default function App() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button type="button" className="text-on-primary hover:bg-white/10 transition-colors p-2 rounded-full" aria-label="Notifications">
-              <span className="material-symbols-outlined text-[24px]">notifications</span>
-            </button>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 20" width="38" height="20" aria-label="United States Government" role="img">
               {/* 13 stripes */}
               {Array.from({ length: 13 }).map((_, i) => (
