@@ -1,5 +1,7 @@
 # Automated Label Review Tool (ALRT)
 
+[![CI](https://github.com/PlntGoblin/Automated-Label-Review-Tool/actions/workflows/ci.yml/badge.svg)](https://github.com/PlntGoblin/Automated-Label-Review-Tool/actions/workflows/ci.yml)
+
 TTB reviewers check thousands of alcohol label applications against COLA submissions by hand. ALRT is a prototype that does the first pass automatically — a reviewer uploads a label image and the application data, and the system surfaces anything that needs a closer look.
 
 The tool is intentionally advisory. It flags mismatches. It doesn't approve or deny anything. A human makes the compliance call.
