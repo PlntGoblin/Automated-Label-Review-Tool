@@ -202,46 +202,66 @@ async def _call_with_retry(
         raise VisionAPIError(f"Non-retryable model error: {fatal}") from fatal
 
 
+_WARNING_REREAD_PROMPT = (
+    "Read the government warning text in this image verbatim. "
+    "Return only the exact text, nothing else. "
+    "If unreadable, return the single word: UNREADABLE"
+)
+
+
 async def extract_warning_text(image_bytes: bytes) -> str | None:
     """Targeted extraction of just the government warning text from a pre-cropped image.
 
     Used as a fallback when the main extraction produces a low-quality warning read
     (e.g. rotated label). Returns the verbatim text string, or None on failure.
+
+    Routes through Gemini when VISION_PROVIDER=gemini to avoid a slow sequential
+    Claude call after the primary Gemini extraction.
     """
-    if not settings.anthropic_api_key:
-        return None
+    provider = settings.vision_provider.lower()
+    media_type = _detect_media_type(image_bytes)
+    image_b64 = base64.standard_b64encode(image_bytes).decode("ascii")
+
     try:
-        media_type = _detect_media_type(image_bytes)
-        image_b64 = base64.standard_b64encode(image_bytes).decode("ascii")
-        client = _get_client()
-        response = await client.messages.create(
-            model=settings.anthropic_model,
-            max_tokens=400,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image" if media_type != "application/pdf" else "document",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": image_b64,
+        if provider == "gemini" and settings.gemini_api_key:
+            client = _get_gemini_client()
+            parts = [
+                google_types.Part.from_bytes(data=image_bytes, mime_type=media_type),
+                google_types.Part.from_text(text=_WARNING_REREAD_PROMPT),
+            ]
+            response = await client.aio.models.generate_content(
+                model=settings.gemini_model,
+                contents=parts,
+                config=google_types.GenerateContentConfig(
+                    thinking_config=google_types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
+            text = response.text.strip()
+        else:
+            if not settings.anthropic_api_key:
+                return None
+            anthropic_client = _get_client()
+            response = await anthropic_client.messages.create(
+                model=settings.anthropic_model,
+                max_tokens=400,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image" if media_type != "application/pdf" else "document",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": media_type,
+                                    "data": image_b64,
+                                },
                             },
-                        },
-                        {
-                            "type": "text",
-                            "text": (
-                                "Read the government warning text in this image verbatim. "
-                                "Return only the exact text, nothing else. "
-                                "If unreadable, return the single word: UNREADABLE"
-                            ),
-                        },
-                    ],
-                }
-            ],
-        )
-        text = _first_text_block(response).strip()
+                            {"type": "text", "text": _WARNING_REREAD_PROMPT},
+                        ],
+                    }
+                ],
+            )
+            text = _first_text_block(response).strip()
         return None if text == "UNREADABLE" else text
     except Exception:
         logger.warning("extract_warning_text failed", exc_info=True)
